@@ -19,11 +19,17 @@ const Chat = () => {
 
   useEffect(() => {
     fetchConversations();
+    // Poll conversations every 10s
+    const convInterval = setInterval(fetchConversations, 10000);
+    return () => clearInterval(convInterval);
   }, []);
 
   useEffect(() => {
     if (selectedUser) {
       fetchMessages(selectedUser.id);
+      // Poll messages every 4s when a conversation is open
+      const msgInterval = setInterval(() => fetchMessages(selectedUser.id), 4000);
+      return () => clearInterval(msgInterval);
     }
   }, [selectedUser]);
 
