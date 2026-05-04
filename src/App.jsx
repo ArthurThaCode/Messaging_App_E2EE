@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Auth from "./pages/Auth";
@@ -30,32 +29,37 @@ const AppContent = () => {
     <Router>
       <div className="app-container">
         {user && (
-          <header className="flex items-center justify-between p-4 glass rounded-2xl mb-6 shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-500/20 rounded-xl">
-                <Shield className="text-indigo-400" />
+          <header className="app-header glass rounded-[32px] px-6 py-4 shadow-2xl shadow-black/30">
+            <div className="brand-block">
+              <div className="brand-icon glass p-3 rounded-3xl">
+                <Shield className="text-accent" />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight">WhisperBox</h1>
+              <div>
+                <p className="text-sm text-text2 uppercase tracking-[0.35em] font-semibold mb-1">WhisperBox</p>
+                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Secure messaging, simplified.</h1>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold">{user.display_name}</p>
-                <div className="flex items-center gap-1.5 justify-end">
-                   <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full pulse"></div>
-                   <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">SECURE NODE</p>
-                </div>
+
+            <div className="header-actions">
+              <div className="status-chip">
+                <span className="status-dot"></span>
+                <span>Connected</span>
+              </div>
+              <div className="user-info">
+                <p className="text-sm font-semibold">{user.display_name}</p>
+                <p className="text-xs text-text3">End-to-end encrypted session</p>
               </div>
               <button 
                 onClick={logout}
-                className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 shadow-none hover:shadow-none transition-all rounded-xl"
+                className="btn-ghost rounded-3xl px-4 py-3"
               >
-                <LogOut size={20} />
+                <LogOut size={18} />
               </button>
             </div>
           </header>
         )}
 
-        <main className="flex-1 flex flex-col min-h-0">
+        <main className="app-main">
           <Routes>
             <Route path="/auth" element={user ? <Navigate to="/" /> : <Auth />} />
             <Route 
@@ -69,8 +73,8 @@ const AppContent = () => {
           </Routes>
         </main>
 
-        <footer className="mt-6 pb-2 text-center">
-          <p className="text-[10px] text-muted uppercase tracking-[0.3em] font-medium">
+        <footer className="app-footer text-center mt-4">
+          <p className="text-[10px] text-text3 uppercase tracking-[0.35em] font-medium">
             E2EE Protocol v1.0 • AES-256-GCM • RSA-2048-OAEP
           </p>
         </footer>

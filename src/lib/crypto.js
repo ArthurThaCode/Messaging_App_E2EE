@@ -85,9 +85,6 @@ export const deriveKeyFromPassword = async (password, saltBase64) => {
   );
 };
 
-/**
- * Wrap a private key with a password-derived key
- */
 export const wrapPrivateKey = async (privateKeyBase64, password, saltBase64) => {
   const aesKey = await deriveKeyFromPassword(password, saltBase64);
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
@@ -99,19 +96,23 @@ export const wrapPrivateKey = async (privateKeyBase64, password, saltBase64) => 
     privateKeyBuffer
   );
 
+  // Concatenate IV + Ciphertext into a single buffer
+  const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(encryptedBuffer), iv.length);
+
   return {
-    wrappedKey: bufferToBase64(encryptedBuffer),
-    iv: bufferToBase64(iv),
+    wrappedKey: bufferToBase64(combined.buffer),
   };
 };
 
-/**
- * Unwrap a private key using a password
- */
-export const unwrapPrivateKey = async (wrappedKeyBase64, ivBase64, password, saltBase64) => {
+export const unwrapPrivateKey = async (wrappedKeyBase64, password, saltBase64) => {
   const aesKey = await deriveKeyFromPassword(password, saltBase64);
-  const iv = base64ToBuffer(ivBase64);
-  const wrappedKey = base64ToBuffer(wrappedKeyBase64);
+  const combined = new Uint8Array(base64ToBuffer(wrappedKeyBase64));
+  
+  // Extract IV (first 12 bytes) and Ciphertext (the rest)
+  const iv = combined.slice(0, 12);
+  const wrappedKey = combined.slice(12);
 
   const decryptedBuffer = await window.crypto.subtle.decrypt(
     { name: "AES-GCM", iv },
@@ -122,10 +123,7 @@ export const unwrapPrivateKey = async (wrappedKeyBase64, ivBase64, password, sal
   return bufferToBase64(decryptedBuffer);
 };
 
-/**
- * Encrypt a message for a recipient
- */
-export const encryptPayload = async (plaintext, recipientPublicKeyBase64) => {
+export const encryptPayload = async (plaintext, recipientPublicKeyBase64, senderPublicKeyBase64) => {
   // 1. Generate random AES session key
   const aesKey = await window.crypto.subtle.generateKey(
     AES_ALGO,
@@ -151,10 +149,26 @@ export const encryptPayload = async (plaintext, recipientPublicKeyBase64) => {
     ["encrypt"]
   );
 
+  // 4. Wrap AES key with sender's own RSA public key
+  const senderPublicKey = await window.crypto.subtle.importKey(
+    "spki",
+    base64ToBuffer(senderPublicKeyBase64),
+    RSA_ALGO,
+    false,
+    ["encrypt"]
+  );
+
   const rawAesKey = await window.crypto.subtle.exportKey("raw", aesKey);
+  
   const encryptedKeyBuffer = await window.crypto.subtle.encrypt(
     { name: "RSA-OAEP" },
     recipientPublicKey,
+    rawAesKey
+  );
+
+  const encryptedKeyForSelfBuffer = await window.crypto.subtle.encrypt(
+    { name: "RSA-OAEP" },
+    senderPublicKey,
     rawAesKey
   );
 
@@ -162,6 +176,7 @@ export const encryptPayload = async (plaintext, recipientPublicKeyBase64) => {
     ciphertext: bufferToBase64(ciphertextBuffer),
     iv: bufferToBase64(iv),
     encryptedKey: bufferToBase64(encryptedKeyBuffer),
+    encryptedKeyForSelf: bufferToBase64(encryptedKeyForSelfBuffer),
   };
 };
 

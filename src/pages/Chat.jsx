@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { messageApi, userApi } from "../lib/api";
 import { encryptPayload, decryptPayload } from "../lib/crypto";
-import { motion, AnimatePresence } from "framer-motion";
-import { Send, User as UserIcon, Shield, Search, Loader2, ArrowLeft, MessageSquare, ShieldAlert } from "lucide-react";
-
+import { motion } from "framer-motion";
+import { Send, User as UserIcon, Shield, Search, Loader2, ArrowLeft, MessageSquare, ShieldAlert, Lock } from "lucide-react";
+import { wsService } from "../lib/websocket";
 const Chat = () => {
   const { user, privateKey } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -20,15 +19,11 @@ const Chat = () => {
 
   useEffect(() => {
     fetchConversations();
-    const interval = setInterval(fetchConversations, 5000); 
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     if (selectedUser) {
       fetchMessages(selectedUser.id);
-      const interval = setInterval(() => fetchMessages(selectedUser.id), 3000);
-      return () => clearInterval(interval);
     }
   }, [selectedUser]);
 
@@ -38,12 +33,42 @@ const Chat = () => {
     }
   }, [messages]);
 
+  // WebSocket listeners for real-time messages
+  useEffect(() => {
+    const handleNewMessage = (msgData) => {
+      if (selectedUser && (msgData.from_user_id === selectedUser.id || msgData.to_user_id === selectedUser.id)) {
+        const handleDecryption = async () => {
+          try {
+            const isMine = msgData.from_user_id === user.id;
+            const encryptedKey = isMine ? msgData.payload.encryptedKeyForSelf : msgData.payload.encryptedKey;
+            const plaintext = await decryptPayload(
+              {
+                ciphertext: msgData.payload.ciphertext,
+                iv: msgData.payload.iv,
+                encryptedKey: encryptedKey,
+              },
+              privateKey
+            );
+            setMessages((prev) => [...prev, { ...msgData, plaintext, decrypted: true }]);
+          } catch (err) {
+            console.error("Failed to decrypt incoming message", err);
+            setMessages((prev) => [...prev, { ...msgData, plaintext: "[Chiffrement Verrouillé]", decrypted: false }]);
+          }
+        };
+        handleDecryption();
+      }
+    };
+
+    wsService.on("message", handleNewMessage);
+    return () => wsService.off("message", handleNewMessage);
+  }, [selectedUser, user, privateKey]);
+
   const fetchConversations = async () => {
     try {
       const { data } = await messageApi.getConversations();
-      // Handle both { conversations: [...] } and [...]
       const convs = Array.isArray(data) ? data : (data.conversations || []);
-      setConversations(convs);
+      // Normalize: API returns user_id, map to id for consistency
+      setConversations(convs.map(c => ({ ...c, id: c.user_id ?? c.id })));
     } catch (err) {
       console.error("Failed to fetch conversations", err);
     }
@@ -57,11 +82,13 @@ const Chat = () => {
       const decryptedMessages = await Promise.all(
         msgs.map(async (msg) => {
           try {
+            const isMine = msg.from_user_id === user.id;
+            const encryptedKey = isMine ? msg.payload.encryptedKeyForSelf : msg.payload.encryptedKey;
             const plaintext = await decryptPayload(
               { 
-                ciphertext: msg.ciphertext, 
-                iv: msg.iv, 
-                encrypted_key: msg.sender_id === user.id ? msg.encrypted_key_for_self : msg.encrypted_key 
+                ciphertext: msg.payload.ciphertext, 
+                iv: msg.payload.iv, 
+                encryptedKey: encryptedKey 
               },
               privateKey
             );
@@ -73,7 +100,8 @@ const Chat = () => {
         })
       );
       
-      setMessages(decryptedMessages);
+      // Reverse messages if backend returns newest first, so they display bottom-up
+      setMessages(decryptedMessages.reverse());
     } catch (err) {
       console.error("Failed to fetch messages", err);
     }
@@ -99,149 +127,156 @@ const Chat = () => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser || sending) return;
 
+    const msgText = newMessage.trim();
     setSending(true);
+
     try {
+      // 1. Get recipient's public key
       const { data: recipientKeyData } = await userApi.getPublicKey(selectedUser.id);
-      const recipientPublicKey = recipientKeyData.public_key || recipientKeyData;
+      const recipientPublicKey = recipientKeyData.public_key;
 
-      const payloadForRecipient = await encryptPayload(newMessage, recipientPublicKey);
-      const payloadForSelf = await encryptPayload(newMessage, user.public_key);
+      // 2. Encrypt the message (for recipient + for self)
+      const encrypted = await encryptPayload(msgText, recipientPublicKey, user.public_key);
 
-      await messageApi.sendMessage({
-        receiver_id: selectedUser.id,
-        ciphertext: payloadForRecipient.ciphertext,
-        iv: payloadForRecipient.iv,
-        encrypted_key: payloadForRecipient.encryptedKey,
-        encrypted_key_for_self: payloadForSelf.encryptedKey,
-      });
+      const messagePayload = {
+        to: selectedUser.id,
+        payload: {
+          ciphertext: encrypted.ciphertext,
+          iv: encrypted.iv,
+          encryptedKey: encrypted.encryptedKey,
+          encryptedKeyForSelf: encrypted.encryptedKeyForSelf,
+        }
+      };
+
+      // 3. Always send via REST (reliable, gives us a response)
+      await messageApi.sendMessage(messagePayload);
 
       setNewMessage("");
-      fetchMessages(selectedUser.id);
+      // Refresh messages and conversation list
+      await fetchMessages(selectedUser.id);
       fetchConversations();
     } catch (err) {
       console.error("Failed to send message", err);
+      alert("Erreur lors de l'envoi du message. Veuillez réessayer.");
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      {/* Sidebar */}
-      <div className={`sidebar flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
-        <div className="p-6 border-b border-white/5">
-          <p className="text-[10px] font-black text-muted uppercase tracking-[0.2em] mb-4">Conversations</p>
-          <div className="input-wrapper mb-4">
-             <Search className="input-icon-left text-muted/40" size={16} />
-             <input
-                type="text"
-                placeholder="Search users..."
-                className="pl-10 h-11 text-xs"
-                value={searchQuery}
-                onChange={handleSearch}
-             />
+    <div className="chat-shell">
+      <aside className={`sidebar ${selectedUser ? 'sidebar-full' : ''}`}>
+        <div className="sidebar-header">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.35em] text-text3 font-semibold mb-2">Conversations</p>
+            <h2 className="text-xl font-semibold">Contacts sécurisés</h2>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="sidebar-search">
+          <Search className="search-icon" size={18} />
+          <input
+            type="text"
+            placeholder="Rechercher un utilisateur..."
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+        </div>
+
+        <div className="sidebar-list">
           {searchQuery.length > 2 ? (
-            <div className="p-2">
-              <p className="text-[10px] uppercase font-black text-accent px-4 mb-3 tracking-widest">Recherche</p>
+            <>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-accent font-semibold mb-3">Résultats</p>
               {searchResults.map((u) => (
-                <div
+                <button
                   key={u.id}
-                  onClick={() => { setSelectedUser(u); setSearchQuery(""); setSearchResults([]); }}
-                  className="conv-item rounded-xl flex items-center gap-3 m-1"
+                  type="button"
+                  onClick={() => { setSelectedUser(u); setSearchQuery(''); setSearchResults([]); }}
+                  className="conv-item"
                 >
-                  <div className="w-10 h-10 rounded-full bg-accent-dim flex items-center justify-center border border-accent/20">
+                  <div className="avatar">
                     <UserIcon size={18} className="text-accent2" />
                   </div>
-                  <div>
-                    <p className="font-bold text-sm text-white">{u.display_name}</p>
-                    <p className="text-xs text-muted">@{u.username}</p>
+                  <div className="conv-meta">
+                    <p className="font-semibold text-white truncate">{u.display_name}</p>
+                    <p className="text-xs text-text3">@{u.username}</p>
                   </div>
-                </div>
+                </button>
               ))}
-              {searchResults.length === 0 && <p className="text-center text-xs text-muted mt-4">Aucun utilisateur trouvé</p>}
-            </div>
+              {searchResults.length === 0 && <p className="text-center text-xs text-text3 mt-4">Aucun utilisateur trouvé</p>}
+            </>
           ) : (
-            <div className="p-2">
-              {conversations.length === 0 && (
-                <div className="text-center py-12 px-6">
-                  <MessageSquare className="mx-auto text-muted/20 mb-4" size={40} />
-                  <p className="text-xs text-muted font-medium leading-relaxed">
-                    Commencez une nouvelle conversation sécurisée.
-                  </p>
+            <>
+              {conversations.length === 0 ? (
+                <div className="empty-conversations">
+                  <MessageSquare size={36} className="text-text3 mb-4" />
+                  <p className="text-sm text-text2">Commencez une nouvelle conversation sécurisée.</p>
                 </div>
+              ) : (
+                conversations.map((c) => (
+                  <button
+                    key={c.id || c.user_id}
+                    type="button"
+                    onClick={() => setSelectedUser(c)}
+                    className={`conv-item ${selectedUser?.id === c.id ? 'active' : ''}`}
+                  >
+                    <div className="avatar">
+                      <UserIcon size={20} />
+                    </div>
+                    <div className="conv-meta">
+                      <p className="font-semibold text-white truncate">{c.display_name}</p>
+                      <p className="text-[10px] uppercase tracking-[0.3em] text-green font-black">Encrypted</p>
+                    </div>
+                  </button>
+                ))
               )}
-              {conversations.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => setSelectedUser(c)}
-                  className={`conv-item rounded-xl flex items-center gap-4 m-1 ${selectedUser?.id === c.id ? 'active' : ''}`}
-                >
-                  <div className="w-12 h-12 rounded-full bg-surface3 flex items-center justify-center relative border border-white/5 shadow-inner">
-                    <UserIcon size={22} className={selectedUser?.id === c.id ? "text-accent2" : "text-muted/50"} />
-                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green border-4 border-surface rounded-full"></div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-white truncate">{c.display_name}</p>
-                    <p className="text-[10px] text-green uppercase font-black tracking-widest flex items-center gap-1.5 mt-1">
-                      <Shield size={10} /> Encrypted
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            </>
           )}
         </div>
-      </div>
+      </aside>
 
-      {/* Chat Area */}
-      <div className={`chat-area flex-1 flex flex-col ${!selectedUser ? 'hidden md:flex' : 'flex'}`}>
+      <section className={`chat-area ${selectedUser ? 'chat-active' : ''}`}>
         {selectedUser ? (
           <>
-            <div className="h-[60px] px-6 border-b border-white/5 flex items-center justify-between bg-surface/50 backdrop-blur-xl">
-              <div className="flex items-center gap-4">
-                <button onClick={() => setSelectedUser(null)} className="md:hidden p-2 -ml-2 text-muted">
-                   <ArrowLeft size={20} />
+            <div className="chat-header glass">
+              <div className="chat-title">
+                <button onClick={() => setSelectedUser(null)} className="back-btn">
+                  <ArrowLeft size={20} />
                 </button>
-                <div className="w-10 h-10 rounded-full bg-surface3 flex items-center justify-center border border-white/5">
-                  <UserIcon size={20} className="text-white/70" />
-                </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white leading-none mb-1">{selectedUser.display_name}</h3>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 bg-green rounded-full shadow-[0_0_8px_var(--green)]"></div>
-                    <p className="text-[10px] text-green font-black uppercase tracking-widest">Secure Active</p>
-                  </div>
+                  <p className="text-sm text-text3 uppercase tracking-[0.35em] mb-1">Conversation</p>
+                  <h3 className="text-xl font-semibold">{selectedUser.display_name}</h3>
                 </div>
               </div>
-              <div className="hidden sm:flex items-center gap-4 text-xs text-muted font-medium font-mono">
-                 <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/5">
-                    <Shield size={12} className="text-accent" />
-                    <span>AES-GCM + RSA-2048</span>
-                 </div>
+              <div className="chat-meta">
+                <div className="status-chip">
+                  <span className="status-dot"></span>
+                  <span>Sécurisé</span>
+                </div>
+                <div className="meta-pill">
+                  <Shield size={14} />
+                  <span>AES-GCM + RSA-2048</span>
+                </div>
               </div>
             </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+            <div ref={scrollRef} className="messages-panel">
               {messages.map((msg) => {
-                const isMine = msg.sender_id === user.id;
+                const isMine = msg.from_user_id === user.id;
                 return (
                   <motion.div
                     key={msg.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}
+                    className={`message-row ${isMine ? 'sent' : 'received'}`}
                   >
-                    <div className={`message-bubble ${isMine ? 'message-sent shadow-lg shadow-accent/20' : 'message-received'}`}>
+                    <div className={`message-bubble ${isMine ? 'message-sent' : 'message-received'}`}>
                       {!msg.decrypted && <ShieldAlert size={14} className="text-red mb-2" />}
                       <p className={msg.decrypted ? '' : 'text-red font-mono text-xs italic'}>
                         {msg.plaintext}
                       </p>
                     </div>
-                    <div className={`flex items-center gap-2 mt-2 px-1 text-[9px] font-black uppercase tracking-widest text-muted`}>
+                    <div className="message-meta">
                       <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       {msg.decrypted && <Shield size={10} className="text-green" />}
                     </div>
@@ -250,68 +285,64 @@ const Chat = () => {
               })}
             </div>
 
-            <form onSubmit={handleSendMessage} className="p-6 bg-surface border-t border-white/5">
-              <div className="flex gap-3">
-                <div className="flex-1 input-wrapper">
-                  <textarea
-                    rows="1"
-                    placeholder="Type an encrypted message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className="msg-input py-3 min-h-[48px]"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage(e);
-                      }
-                    }}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={sending || !newMessage.trim()}
-                  className="w-12 h-12 bg-accent hover:bg-accent2 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 disabled:opacity-50"
-                >
-                  {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-                </button>
-              </div>
-              <div className="flex items-center gap-2 mt-3 px-1 text-[9px] font-black text-muted uppercase tracking-[0.2em] font-mono">
-                 <Lock size={10} /> Chiffré avant l'envoi · Entrée pour envoyer
-              </div>
+            <form onSubmit={handleSendMessage} className="chat-footer glass">
+              <textarea
+                rows="1"
+                placeholder="Écrire un message chiffré..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="msg-input"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e);
+                  }
+                }}
+              />
+              <button
+                type="submit"
+                disabled={sending || !newMessage.trim()}
+                className="send-button"
+              >
+                {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+              </button>
             </form>
+            <div className="chat-subtext">
+              <Lock size={12} />
+              <span>Chiffré avant l'envoi · Entrée pour envoyer</span>
+            </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
-            <div className="w-24 h-24 bg-accent-dim rounded-[2rem] flex items-center justify-center mb-10 border border-accent/20 shadow-2xl relative">
+          <div className="placeholder-panel">
+            <div className="placeholder-hero">
               <Shield size={48} className="text-accent2" />
-              <div className="absolute -top-3 -right-3 w-10 h-10 bg-green rounded-full border-4 border-bg flex items-center justify-center shadow-xl">
-                 <Lock size={18} className="text-white" />
+              <div className="placeholder-badge">
+                <Lock size={18} className="text-white" />
               </div>
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-tighter">WHISPERBOX</h2>
-            <p className="text-muted max-w-sm text-lg font-medium leading-relaxed mb-10">
+            <h2 className="placeholder-title">WHISPERBOX</h2>
+            <p className="placeholder-copy">
               Sélectionnez une conversation pour démarrer un échange sécurisé de bout en bout.
             </p>
-            <div className="grid grid-cols-3 gap-8 max-w-md w-full p-8 bg-surface2/50 rounded-3xl border border-white/5 backdrop-blur-md">
-               <div className="text-center">
-                  <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-2">RSA-2048</p>
-                  <p className="text-[9px] text-muted uppercase tracking-wider">Identité</p>
-               </div>
-               <div className="text-center border-x border-white/5">
-                  <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-2">AES-GCM</p>
-                  <p className="text-[9px] text-muted uppercase tracking-wider">Messages</p>
-               </div>
-               <div className="text-center">
-                  <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-2">PFS</p>
-                  <p className="text-[9px] text-muted uppercase tracking-wider">Session</p>
-               </div>
+            <div className="placeholder-grid">
+              <div>
+                <p className="pill-title">RSA-2048</p>
+                <p className="pill-copy">Identité</p>
+              </div>
+              <div>
+                <p className="pill-title">AES-GCM</p>
+                <p className="pill-copy">Messages</p>
+              </div>
+              <div>
+                <p className="pill-title">PFS</p>
+                <p className="pill-copy">Session</p>
+              </div>
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
-);
 };
 
 export default Chat;

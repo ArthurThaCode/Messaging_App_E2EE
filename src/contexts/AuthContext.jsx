@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { get, set, del } from "idb-keyval";
 import { authApi } from "../lib/api";
 import { generateIdentity, wrapPrivateKey, unwrapPrivateKey } from "../lib/crypto";
+import { wsService } from "../lib/websocket";
 
 const AuthContext = createContext();
 
@@ -13,22 +14,26 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("token");
-      if (token) {
+      const userId = localStorage.getItem("userId");
+      
+      if (token && userId) {
         try {
           const { data } = await authApi.getProfile();
           // The backend might return { user: ... } or just the user object
           const userData = data.user || data;
           setUser(userData);
           
-          // Try to load private key from IndexedDB
-          const savedKey = await get(`pk_${userData.id}`);
+          // Try to load private key from IndexedDB using stored userId
+          const savedKey = await get(`pk_${userId}`);
           if (savedKey) {
             setPrivateKey(savedKey);
           }
         } catch (err) {
           console.error("Auth init failed", err);
-          // If profile fetch fails, token might be expired
+          // If profile fetch fails, token might be expired or invalid
           localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("userId");
           setUser(null);
         }
       }
@@ -41,35 +46,45 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await authApi.login({ username, password });
       const token = data.access_token || data.token;
+      const refreshToken = data.refresh_token;
+      
       localStorage.setItem("token", token);
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
+      
+      // Connect to WebSocket (non-blocking)
+      wsService.connect(token).catch((wsErr) => {
+        console.warn("WebSocket connection failed, will fall back to polling", wsErr);
+      });
       
       const userData = data.user || data;
+      if (userData.id) {
+        localStorage.setItem("userId", userData.id);
+      }
       setUser(userData);
 
       // Unwrap and store private key
-      // Note: backend should return wrapped_private_key, iv, and pbkdf2_salt
       const wrappedKey = userData.wrapped_private_key;
-      const iv = userData.iv;
       const salt = userData.pbkdf2_salt;
 
       if (wrappedKey && salt) {
         try {
           const decryptedPrivateKey = await unwrapPrivateKey(
             wrappedKey,
-            iv,
             password,
             salt
           );
           setPrivateKey(decryptedPrivateKey);
-          await set(`pk_${userData.id}`, decryptedPrivateKey);
-        } catch (cryptoErr) {
-          console.error("Failed to unwrap private key", cryptoErr);
+          if (userData.id) {
+            await set(`pk_${userData.id}`, decryptedPrivateKey);
+          }
+        } catch (err) {
           throw new Error("Clé privée introuvable ou mot de passe incorrect pour le déchiffrement.");
         }
       } else {
         console.warn("User has no keys stored on server");
       }
-      
       return userData;
     } catch (err) {
       throw err;
@@ -85,7 +100,7 @@ export const AuthProvider = ({ children }) => {
     const saltBase64 = btoa(String.fromCharCode(...salt));
 
     // 3. Wrap private key
-    const { wrappedKey, iv } = await wrapPrivateKey(rawPrivateKey, password, saltBase64);
+    const { wrappedKey } = await wrapPrivateKey(rawPrivateKey, password, saltBase64);
 
     // 4. Register on backend
     const { data } = await authApi.register({
@@ -94,18 +109,33 @@ export const AuthProvider = ({ children }) => {
       password,
       public_key: publicKey,
       wrapped_private_key: wrappedKey,
-      iv: iv,
       pbkdf2_salt: saltBase64,
     });
 
     // 5. Backend for register might return token or we might need to login
     const token = data.access_token || data.token;
+    const refreshToken = data.refresh_token;
+    
     if (token) {
       localStorage.setItem("token", token);
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
+      
+      // Connect to WebSocket
+      try {
+        await wsService.connect(token);
+      } catch (wsErr) {
+        console.warn("WebSocket connection failed, will fall back to polling", wsErr);
+      }
+      
       const userData = data.user || data;
+      if (userData.id) {
+        localStorage.setItem("userId", userData.id);
+        await set(`pk_${userData.id}`, rawPrivateKey);
+      }
       setUser(userData);
       setPrivateKey(rawPrivateKey);
-      await set(`pk_${userData.id}`, rawPrivateKey);
       return userData;
     } else {
       // If no token, perform manual login
@@ -114,10 +144,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    if (user) {
-      await del(`pk_${user.id}`);
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      await del(`pk_${userId}`);
     }
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userId");
+    wsService.disconnect();
     setUser(null);
     setPrivateKey(null);
   };

@@ -18,10 +18,56 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Interceptor to handle token refresh on 401
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes("/auth/")) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = localStorage.getItem("refreshToken");
+        console.log("Attempting token refresh with refreshToken:", refreshToken ? "exists" : "missing");
+        
+        if (refreshToken) {
+          const { data } = await axios.post(
+            "https://whisperbox.koyeb.app/auth/refresh",
+            { refresh_token: refreshToken }
+          );
+          
+          console.log("Token refresh successful, new token stored");
+          const newToken = data.access_token || data.token;
+          localStorage.setItem("token", newToken);
+          
+          // Store new refresh token if backend returns it
+          if (data.refresh_token) {
+            localStorage.setItem("refreshToken", data.refresh_token);
+          }
+          
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        } else {
+          console.warn("No refreshToken available, clearing session");
+        }
+      } catch (refreshErr) {
+        console.error("Token refresh failed:", refreshErr.response?.status, refreshErr.response?.data);
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userId");
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 export const authApi = {
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
-  getProfile: () => api.get("/auth/profile"),
+  getProfile: () => api.get("/auth/me"),
 };
 
 export const userApi = {
@@ -32,7 +78,7 @@ export const userApi = {
 
 export const messageApi = {
   getConversations: () => api.get("/conversations"),
-  getMessages: (userId) => api.get(`/messages/${userId}`),
+  getMessages: (userId) => api.get(`/conversations/${userId}/messages`),
   sendMessage: (data) => api.post("/messages", data),
 };
 
