@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, User, Mail, ShieldCheck, Loader2, Eye, EyeOff, AlertCircle, Shield, Zap } from "lucide-react";
+import { Lock, User, AtSign, ShieldCheck, Loader2, Eye, EyeOff, AlertCircle, Shield, Zap } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -42,9 +42,9 @@ const Auth = () => {
       <div className="auth-layout">
         <aside className="auth-sidepanel">
           <div className="auth-sidepanel-head">
-            <ShieldCheck size={24} className="text-accent" />
+            <ShieldCheck size={24} />
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-text3 font-semibold mb-1">WhisperBox</p>
+              <p className="auth-eyebrow">WhisperBox</p>
               <h2>End-to-end encrypted messaging</h2>
             </div>
           </div>
@@ -57,21 +57,21 @@ const Auth = () => {
               <span><Lock size={18} /></span>
               <div>
                 <p>Local key management</p>
-                <p className="text-sm text-text3">Your private key never leaves your device.</p>
+                <p>Your private key never leaves your device.</p>
               </div>
             </div>
             <div className="auth-feature">
               <span><Shield size={18} /></span>
               <div>
                 <p>Automatic encryption</p>
-                <p className="text-sm text-text3">Messages encrypted before sending.</p>
+                <p>Messages encrypted before sending.</p>
               </div>
             </div>
             <div className="auth-feature">
               <span><Zap size={18} /></span>
               <div>
                 <p>Modern interface</p>
-                <p className="text-sm text-text3">Clean design that works on all screens.</p>
+                <p>Clean design that works on all screens.</p>
               </div>
             </div>
           </div>
@@ -84,7 +84,7 @@ const Auth = () => {
         >
           <div className="logo">
             <div className="logo-icon">
-              <ShieldCheck size={20} className="text-accent2" />
+              <ShieldCheck size={20} />
             </div>
             <div>
               <p className="logo-title">WhisperBox</p>
@@ -93,18 +93,20 @@ const Auth = () => {
           </div>
 
           <div className="auth-tabs">
-            <div
+            <button
+              type="button"
               className={`auth-tab ${isLogin ? 'active' : ''}`}
               onClick={() => { setIsLogin(true); setError(""); }}
             >
               Sign In
-            </div>
-            <div
+            </button>
+            <button
+              type="button"
               className={`auth-tab ${!isLogin ? 'active' : ''}`}
               onClick={() => { setIsLogin(false); setError(""); }}
             >
               Register
-            </div>
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -124,6 +126,7 @@ const Auth = () => {
                       required
                       placeholder="John Doe"
                       className="pl-10"
+                      autoComplete="name"
                       value={formData.displayName}
                       onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                     />
@@ -135,12 +138,13 @@ const Auth = () => {
             <div className="form-group mb-0">
               <label>Username</label>
               <div className="input-wrapper relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
+                <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
                 <input
                   type="text"
                   required
                   placeholder="your_username"
                   className="pl-10"
+                  autoComplete="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 />
@@ -154,16 +158,17 @@ const Auth = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="••••••••"
+                  placeholder="Password"
                   className="pl-10 pr-10"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-0 h-full px-2 text-text3 hover:text-accent transition-colors flex items-center"
-                  style={{ cursor: 'pointer' }}
+                  className="password-toggle"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -174,10 +179,10 @@ const Auth = () => {
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-3 bg-red-dim border border-red/20 rounded-xl flex items-center gap-2"
+                className="auth-error"
               >
-                <AlertCircle size={14} className="text-red shrink-0" />
-                <p className="text-red text-[11px] font-mono font-medium">{error}</p>
+                <AlertCircle size={14} />
+                <p>{error}</p>
               </motion.div>
             )}
 
@@ -198,7 +203,7 @@ const Auth = () => {
           </form>
 
           <div className="e2ee-notice">
-            <Shield size={16} className="text-accent shrink-0" />
+            <Shield size={16} />
             <p>Your private keys never leave your device. The server only stores encrypted data.</p>
           </div>
         </motion.div>
