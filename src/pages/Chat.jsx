@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { messageApi, userApi } from "../lib/api";
 import { encryptPayload, decryptPayload } from "../lib/crypto";
@@ -17,21 +17,77 @@ const Chat = () => {
   
   const scrollRef = useRef();
 
+  const fetchConversations = useCallback(async () => {
+    try {
+      const { data } = await messageApi.getConversations();
+      const convs = Array.isArray(data) ? data : (data.conversations || []);
+      // Normalize: API returns user_id, map to id for consistency
+      setConversations(convs.map(c => ({ ...c, id: c.user_id ?? c.id })));
+    } catch (err) {
+      console.error("Failed to fetch conversations", err);
+    }
+  }, []);
+
+  const fetchMessages = useCallback(async (userId) => {
+    try {
+      const { data } = await messageApi.getMessages(userId);
+      const msgs = Array.isArray(data) ? data : (data.messages || []);
+      
+      const decryptedMessages = await Promise.all(
+        msgs.map(async (msg) => {
+          try {
+            const isMine = msg.from_user_id === user.id;
+            const encryptedKey = isMine ? msg.payload.encryptedKeyForSelf : msg.payload.encryptedKey;
+            const plaintext = await decryptPayload(
+              { 
+                ciphertext: msg.payload.ciphertext, 
+                iv: msg.payload.iv, 
+                encryptedKey: encryptedKey 
+              },
+              privateKey
+            );
+            return { ...msg, plaintext, decrypted: true };
+          } catch (err) {
+            console.error("Decryption failed", err);
+            return { ...msg, plaintext: "[Encryption Locked]", decrypted: false };
+          }
+        })
+      );
+      
+      // Reverse messages if backend returns newest first, so they display bottom-up
+      setMessages(decryptedMessages.reverse());
+    } catch (err) {
+      console.error("Failed to fetch messages", err);
+    }
+  }, [user.id, privateKey]);
+
   useEffect(() => {
-    fetchConversations();
+    const loadTimeout = setTimeout(() => {
+      fetchConversations();
+    }, 0);
+
     // Poll conversations every 10s
     const convInterval = setInterval(fetchConversations, 10000);
-    return () => clearInterval(convInterval);
-  }, []);
+    return () => {
+      clearTimeout(loadTimeout);
+      clearInterval(convInterval);
+    };
+  }, [fetchConversations]);
 
   useEffect(() => {
     if (selectedUser) {
-      fetchMessages(selectedUser.id);
+      const loadTimeout = setTimeout(() => {
+        fetchMessages(selectedUser.id);
+      }, 0);
+
       // Poll messages every 4s when a conversation is open
       const msgInterval = setInterval(() => fetchMessages(selectedUser.id), 4000);
-      return () => clearInterval(msgInterval);
+      return () => {
+        clearTimeout(loadTimeout);
+        clearInterval(msgInterval);
+      };
     }
-  }, [selectedUser]);
+  }, [selectedUser, fetchMessages]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -68,50 +124,6 @@ const Chat = () => {
     wsService.on("message", handleNewMessage);
     return () => wsService.off("message", handleNewMessage);
   }, [selectedUser, user, privateKey]);
-
-  const fetchConversations = async () => {
-    try {
-      const { data } = await messageApi.getConversations();
-      const convs = Array.isArray(data) ? data : (data.conversations || []);
-      // Normalize: API returns user_id, map to id for consistency
-      setConversations(convs.map(c => ({ ...c, id: c.user_id ?? c.id })));
-    } catch (err) {
-      console.error("Failed to fetch conversations", err);
-    }
-  };
-
-  const fetchMessages = async (userId) => {
-    try {
-      const { data } = await messageApi.getMessages(userId);
-      const msgs = Array.isArray(data) ? data : (data.messages || []);
-      
-      const decryptedMessages = await Promise.all(
-        msgs.map(async (msg) => {
-          try {
-            const isMine = msg.from_user_id === user.id;
-            const encryptedKey = isMine ? msg.payload.encryptedKeyForSelf : msg.payload.encryptedKey;
-            const plaintext = await decryptPayload(
-              { 
-                ciphertext: msg.payload.ciphertext, 
-                iv: msg.payload.iv, 
-                encryptedKey: encryptedKey 
-              },
-              privateKey
-            );
-            return { ...msg, plaintext, decrypted: true };
-          } catch (err) {
-            console.error("Decryption failed", err);
-            return { ...msg, plaintext: "[Encryption Locked]", decrypted: false };
-          }
-        })
-      );
-      
-      // Reverse messages if backend returns newest first, so they display bottom-up
-      setMessages(decryptedMessages.reverse());
-    } catch (err) {
-      console.error("Failed to fetch messages", err);
-    }
-  };
 
   const handleSearch = async (e) => {
     const query = e.target.value;

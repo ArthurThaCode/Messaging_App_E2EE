@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from "react";
 import { get, set, del } from "idb-keyval";
 import { authApi } from "../lib/api";
@@ -43,7 +44,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password) => {
-    try {
       const { data } = await authApi.login({ username, password });
       const token = data.access_token || data.token;
       const refreshToken = data.refresh_token;
@@ -79,16 +79,13 @@ export const AuthProvider = ({ children }) => {
           if (userData.id) {
             await set(`pk_${userData.id}`, decryptedPrivateKey);
           }
-        } catch (err) {
-          throw new Error("Private key not found or incorrect password for decryption.");
+        } catch (decryptError) {
+          throw new Error("Private key not found or incorrect password for decryption.", { cause: decryptError });
         }
       } else {
         console.warn("User has no keys stored on server");
       }
       return userData;
-    } catch (err) {
-      throw err;
-    }
   };
 
   const register = async (displayName, username, password) => {

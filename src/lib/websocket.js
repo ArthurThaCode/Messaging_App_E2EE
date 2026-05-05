@@ -107,19 +107,20 @@ class WebSocketService {
       console.warn("Received empty WebSocket message");
       return;
     }
-    
-    const { type, payload } = data;
 
-    if (type === "message.receive") {
+    const eventType = data.event || data.type;
+    const payload = data.payload ?? data;
+
+    if (eventType === "message.receive") {
       this.emit("message", payload);
-    } else if (type === "message.sent") {
+    } else if (eventType === "message.sent") {
       this.emit("message_sent", payload);
-    } else if (type === "error") {
+    } else if (eventType === "error") {
       this.emit("error", payload);
-    } else if (type) {
-      console.log("Unhandled WebSocket message type:", type, "payload:", payload);
+    } else if (eventType) {
+      console.log("Unhandled WebSocket message event:", eventType, "payload:", payload);
     } else {
-      console.debug("WebSocket message with no type:", data);
+      console.debug("WebSocket message with no event/type:", data);
     }
   }
 
@@ -128,8 +129,10 @@ class WebSocketService {
    */
   sendMessage(payload) {
     const message = {
+      event: "message.send",
       type: "message.send",
-      payload,
+      to: payload?.to,
+      payload: payload?.payload ?? payload,
     };
 
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
