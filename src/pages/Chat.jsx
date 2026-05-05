@@ -87,7 +87,7 @@ const Chat = () => {
         clearInterval(msgInterval);
       };
     }
-  }, [selectedUser, fetchMessages]);
+  }, [selectedUser, fetchMessages, user.id, privateKey]);
 
   useEffect(() => {
     if (scrollRef.current) {
