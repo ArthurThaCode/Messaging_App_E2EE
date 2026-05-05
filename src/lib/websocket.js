@@ -117,6 +117,8 @@ class WebSocketService {
       this.emit("message_sent", payload);
     } else if (eventType === "error") {
       this.emit("error", payload);
+    } else if (eventType === "user.online" || eventType === "user.offline") {
+      this.emit(eventType, payload);
     } else if (eventType) {
       console.log("Unhandled WebSocket message event:", eventType, "payload:", payload);
     } else {

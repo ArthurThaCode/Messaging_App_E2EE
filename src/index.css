@@ -23,6 +23,7 @@
   --radius-sm: 14px;
   --font: 'Syne', sans-serif;
   --mono: 'DM Mono', monospace;
+  --message-font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* UTILITIES */
@@ -601,9 +602,10 @@ button.btn-primary:disabled {
   padding: 1rem 1.15rem;
   border-radius: 1.8rem;
   font-size: 0.98rem;
-  line-height: 1.7;
+  line-height: 1.5;
   position: relative;
   word-break: break-word;
+  font-family: var(--message-font);
 }
 
 .message-sent {
@@ -617,6 +619,68 @@ button.btn-primary:disabled {
   color: var(--text);
   border: 1px solid rgba(255,255,255,0.08);
   border-bottom-left-radius: 0.75rem;
+}
+
+.message-sent.bubble-top { border-bottom-right-radius: 0.4rem; }
+.message-sent.bubble-middle { border-top-right-radius: 0.4rem; border-bottom-right-radius: 0.4rem; }
+.message-sent.bubble-bottom { border-top-right-radius: 0.4rem; }
+
+.message-received.bubble-top { border-bottom-left-radius: 0.4rem; }
+.message-received.bubble-middle { border-top-left-radius: 0.4rem; border-bottom-left-radius: 0.4rem; }
+.message-received.bubble-bottom { border-top-left-radius: 0.4rem; }
+
+.date-separator {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.date-separator span {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.e2ee-trust-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem auto 2rem;
+  padding: 1rem;
+  background: rgba(255, 204, 0, 0.08);
+  border: 1px solid rgba(255, 204, 0, 0.15);
+  border-radius: 1rem;
+  color: #fbbf24;
+  font-size: 0.8rem;
+  max-width: 85%;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 6.5rem;
+  right: 2rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(124, 106, 245, 0.9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(124, 106, 245, 0.3);
+  z-index: 10;
+  border: none;
+  backdrop-filter: blur(8px);
 }
 
 .message-meta {
@@ -762,6 +826,33 @@ button.btn-primary:disabled {
 .text-xs { font-size: 11px; }
 .text-muted { color: var(--text3); }
 
+.online-indicator {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background-color: var(--green);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+}
+
+.copy-btn {
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 0 0 8px;
+  display: flex;
+  align-items: center;
+}
+.copy-btn:hover {
+  opacity: 1;
+}
+
+
 /* CUSTOM SCROLLBAR */
 ::-webkit-scrollbar {
   width: 8px;
@@ -810,6 +901,10 @@ button.btn-primary:disabled {
   .app-container {
     padding: 1rem;
   }
+
+  .mobile-hidden {
+    display: none !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -855,8 +950,7 @@ button.btn-primary:disabled {
   }
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
+body.light-theme {
     --bg: #f5f7ff;
     --surface: rgba(255,255,255,0.92);
     --surface2: rgba(247,249,255,0.95);
@@ -872,63 +966,62 @@ button.btn-primary:disabled {
     --green-dim: rgba(16,185,129,0.14);
     --red: #ef4444;
     --border-strong: rgba(148,163,184,0.22);
-  }
+}
 
-  body {
+body.light-theme {
     background: radial-gradient(circle at top left, rgba(124, 106, 245, 0.12), transparent 28%),
       radial-gradient(circle at 80% 10%, rgba(60, 120, 255, 0.09), transparent 20%),
       var(--bg);
   }
 
-  .glass {
+  body.light-theme .glass {
     background: rgba(255,255,255,0.88);
     border-color: rgba(148,163,184,0.18);
     box-shadow: 0 30px 60px rgba(15, 23, 42, 0.08);
   }
 
-  input, textarea,
-  .sidebar-search input,
-  .conv-item,
-  .chat-footer,
-  .placeholder-panel,
-  .auth-box,
-  .auth-sidepanel {
+  body.light-theme input, body.light-theme textarea,
+  body.light-theme .sidebar-search input,
+  body.light-theme .conv-item,
+  body.light-theme .chat-footer,
+  body.light-theme .placeholder-panel,
+  body.light-theme .auth-box,
+  body.light-theme .auth-sidepanel {
     background: rgba(255,255,255,0.8);
     color: var(--text);
   }
 
-  .auth-box::before,
-  .auth-sidepanel {
+  body.light-theme .auth-box::before,
+  body.light-theme .auth-sidepanel {
     background: rgba(255,255,255,0.9, 0.8);
   }
 
-  .auth-tab {
+  body.light-theme .auth-tab {
     color: var(--text3);
   }
 
-  .auth-tab.active,
-  .conv-item:hover,
-  .conv-item.active,
-  .send-button,
-  .message-sent {
+  body.light-theme .auth-tab.active,
+  body.light-theme .conv-item:hover,
+  body.light-theme .conv-item.active,
+  body.light-theme .send-button,
+  body.light-theme .message-sent {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
   }
 
-  .message-received {
+  body.light-theme .message-received {
     background: rgba(248,250,255,0.78);
     border-color: rgba(148,163,184,0.15);
   }
 
-  .placeholder-panel {
+  body.light-theme .placeholder-panel {
     background: rgba(255,255,255,0.9);
     border-color: rgba(148,163,184,0.18);
   }
 
-  .app-header,
-  .sidebar,
-  .chat-area,
-  .chat-header,
-  .chat-footer {
+  body.light-theme .app-header,
+  body.light-theme .sidebar,
+  body.light-theme .chat-area,
+  body.light-theme .chat-header,
+  body.light-theme .chat-footer {
     border-color: rgba(148,163,184,0.14);
   }
-}

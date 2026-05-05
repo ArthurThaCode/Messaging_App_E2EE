@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { messageApi, userApi } from "../lib/api";
 import { encryptPayload, decryptPayload } from "../lib/crypto";
 import { motion } from "framer-motion";
-import { Send, User as UserIcon, Shield, Search, Loader2, ArrowLeft, MessageSquare, ShieldAlert, Lock } from "lucide-react";
+import { Send, User as UserIcon, Shield, Search, Loader2, ArrowLeft, MessageSquare, ShieldAlert, Lock, ArrowDown, Check, CheckCheck, CheckCircle2 } from "lucide-react";
 import { wsService } from "../lib/websocket";
 const Chat = () => {
   const { user, privateKey } = useAuth();
@@ -14,8 +14,43 @@ const Chat = () => {
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
   
   const scrollRef = useRef();
+  const textareaRef = useRef(null);
+
+  const handleCopy = (id, text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMessageId(id);
+    setTimeout(() => setCopiedMessageId(null), 2000);
+  };
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      setShowScrollButton(scrollHeight - scrollTop - clientHeight > 100);
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }
+  };
+
+  const formatDateSeparator = (dateString) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    
+    return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  };
 
   const fetchConversations = useCallback(async () => {
     try {
@@ -121,8 +156,23 @@ const Chat = () => {
       }
     };
 
+    const handleUserOnline = (data) => setOnlineUsers(prev => new Set(prev).add(data.user_id));
+    const handleUserOffline = (data) => {
+      setOnlineUsers(prev => {
+        const next = new Set(prev);
+        next.delete(data.user_id);
+        return next;
+      });
+    };
+
     wsService.on("message", handleNewMessage);
-    return () => wsService.off("message", handleNewMessage);
+    wsService.on("user.online", handleUserOnline);
+    wsService.on("user.offline", handleUserOffline);
+    return () => {
+      wsService.off("message", handleNewMessage);
+      wsService.off("user.online", handleUserOnline);
+      wsService.off("user.offline", handleUserOffline);
+    };
   }, [selectedUser, user, privateKey]);
 
   const handleSearch = async (e) => {
@@ -170,6 +220,7 @@ const Chat = () => {
       await messageApi.sendMessage(messagePayload);
 
       setNewMessage("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
       // Refresh messages and conversation list
       await fetchMessages(selectedUser.id);
       fetchConversations();
@@ -183,7 +234,7 @@ const Chat = () => {
 
   return (
     <div className="chat-shell">
-      <aside className={`sidebar ${selectedUser ? 'sidebar-full' : ''}`}>
+      <aside className={`sidebar ${selectedUser ? 'mobile-hidden' : ''}`}>
         <div className="sidebar-header">
           <div>
             <p className="text-[10px] uppercase tracking-[0.35em] text-text3 font-semibold mb-2">Conversations</p>
@@ -238,8 +289,9 @@ const Chat = () => {
                     onClick={() => setSelectedUser(c)}
                     className={`conv-item ${selectedUser?.id === c.id ? 'active' : ''}`}
                   >
-                    <div className="avatar">
+                    <div className="avatar relative">
                       <UserIcon size={20} />
+                      {onlineUsers.has(c.id || c.user_id) && <div className="online-indicator"></div>}
                     </div>
                     <div className="conv-meta">
                       <p className="font-semibold text-white truncate">{c.display_name}</p>
@@ -253,7 +305,7 @@ const Chat = () => {
         </div>
       </aside>
 
-      <section className={`chat-area ${selectedUser ? 'chat-active' : ''}`}>
+      <section className={`chat-area ${!selectedUser ? 'mobile-hidden' : ''}`}>
         {selectedUser ? (
           <>
             <div className="chat-header glass">
@@ -278,38 +330,94 @@ const Chat = () => {
               </div>
             </div>
 
-            <div ref={scrollRef} className="messages-panel">
-              {messages.map((msg) => {
+            <div ref={scrollRef} onScroll={handleScroll} className="messages-panel">
+              <div className="e2ee-trust-badge">
+                <Shield size={24} />
+                <p>Messages and calls are end-to-end encrypted.<br/>No one outside of this chat can read or listen to them.</p>
+              </div>
+
+              {messages.map((msg, index) => {
                 const isMine = msg.from_user_id === user.id;
+                
+                const prevMsg = messages[index - 1];
+                const nextMsg = messages[index + 1];
+                const isSamePrev = prevMsg && prevMsg.from_user_id === msg.from_user_id;
+                const isSameNext = nextMsg && nextMsg.from_user_id === msg.from_user_id;
+
+                let bubbleClass = "bubble-single";
+                if (isSamePrev && isSameNext) bubbleClass = "bubble-middle";
+                else if (isSamePrev && !isSameNext) bubbleClass = "bubble-bottom";
+                else if (!isSamePrev && isSameNext) bubbleClass = "bubble-top";
+
+                const msgDate = new Date(msg.created_at).toDateString();
+                const prevDate = prevMsg ? new Date(prevMsg.created_at).toDateString() : null;
+                const showDateSeparator = msgDate !== prevDate;
+
                 return (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`message-row ${isMine ? 'sent' : 'received'}`}
-                  >
-                    <div className={`message-bubble ${isMine ? 'message-sent' : 'message-received'}`}>
-                      {!msg.decrypted && <ShieldAlert size={14} className="text-red mb-2" />}
-                      <p className={msg.decrypted ? '' : 'text-red font-mono text-xs italic'}>
-                        {msg.plaintext}
-                      </p>
-                    </div>
-                    <div className="message-meta">
-                      <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      {msg.decrypted && <Shield size={10} className="text-green" />}
-                    </div>
-                  </motion.div>
+                  <div key={msg.id} className="flex flex-col">
+                    {showDateSeparator && (
+                      <div className="date-separator">
+                        <span>{formatDateSeparator(msg.created_at)}</span>
+                      </div>
+                    )}
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`message-row ${isMine ? 'sent' : 'received'} ${isSameNext ? 'mb-1' : 'mb-4'}`}
+                    >
+                      <div 
+                        className={`message-bubble ${isMine ? 'message-sent' : 'message-received'} ${bubbleClass}`}
+                        style={{ cursor: msg.decrypted ? 'pointer' : 'default' }}
+                        onClick={() => {
+                          if (msg.decrypted) handleCopy(msg.id, msg.plaintext);
+                        }}
+                        title={msg.decrypted ? "Click to copy" : ""}
+                      >
+                        <div className="message-bubble-content flex items-center justify-between gap-2">
+                          <div className="message-bubble-text">
+                            {!msg.decrypted && <ShieldAlert size={14} className="text-red mb-2" />}
+                            <p className={msg.decrypted ? '' : 'text-red font-mono text-xs italic'}>
+                              {msg.plaintext}
+                            </p>
+                          </div>
+                          {copiedMessageId === msg.id && (
+                            <CheckCircle2 size={16} className="opacity-80 shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                      {!isSameNext && (
+                        <div className="message-meta">
+                          <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          {msg.decrypted && <Shield size={10} className="text-green" />}
+                          {isMine && (
+                            msg.delivered ? <CheckCheck size={14} className="text-accent" /> : <Check size={14} className="text-text3" />
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  </div>
                 );
               })}
+              {showScrollButton && (
+                <button onClick={scrollToBottom} className="scroll-to-bottom-btn">
+                  <ArrowDown size={20} />
+                </button>
+              )}
             </div>
 
             <form onSubmit={handleSendMessage} className="chat-footer glass">
               <textarea
+                ref={textareaRef}
                 rows="1"
                 placeholder="Type an encrypted message..."
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={(e) => {
+                  setNewMessage(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                }}
                 className="msg-input"
+                style={{ overflowY: newMessage.split('\n').length > 4 ? 'auto' : 'hidden' }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
