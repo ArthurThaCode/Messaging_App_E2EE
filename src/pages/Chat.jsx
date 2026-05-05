@@ -262,7 +262,7 @@ const Chat = () => {
         <div className="sidebar-list">
           {searchQuery.length > 2 ? (
             <>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-semibold mb-2">Search Results</p>
+              <p className="sidebar-section-label">Search Results</p>
               {searchResults.map((u) => (
                 <button
                   key={u.id}
@@ -271,15 +271,15 @@ const Chat = () => {
                   className="conv-item"
                 >
                   <div className="avatar">
-                    <UserIcon size={18} className="text-accent2" />
+                    <UserIcon size={18} />
                   </div>
                   <div className="conv-meta">
                     <p>{u.display_name}</p>
-                    <p className="text-xs text-text3">@{u.username}</p>
+                    <p>@{u.username}</p>
                   </div>
                 </button>
               ))}
-              {searchResults.length === 0 && <p className="text-center text-xs text-text3 mt-4">No user found</p>}
+              {searchResults.length === 0 && <p className="sidebar-empty-text">No user found</p>}
             </>
           ) : (
             <>
@@ -302,7 +302,7 @@ const Chat = () => {
                     </div>
                     <div className="conv-meta">
                       <p>{c.display_name}</p>
-                      <p className="text-green">Encrypted</p>
+                      <p>Encrypted</p>
                     </div>
                   </button>
                 ))
@@ -321,7 +321,7 @@ const Chat = () => {
                   <ArrowLeft size={18} />
                 </button>
                 <div>
-                  <p className="text-xs text-text3 uppercase tracking-[0.15em] mb-0.5">Conversation</p>
+                  <p>Conversation</p>
                   <h3>{selectedUser.display_name}</h3>
                 </div>
               </div>
@@ -382,22 +382,22 @@ const Chat = () => {
                       >
                         <div className="message-bubble-content flex items-start justify-between gap-2">
                           <div className="message-bubble-text">
-                            {!msg.decrypted && <ShieldAlert size={12} className="text-red mb-1" />}
-                            <p className={msg.decrypted ? '' : 'text-red font-mono text-xs italic'}>
+                            {!msg.decrypted && <ShieldAlert size={12} className="message-alert-icon" />}
+                            <p className={msg.decrypted ? '' : 'message-locked-text'}>
                               {msg.plaintext}
                             </p>
                           </div>
                           {copiedMessageId === msg.id && (
-                            <CheckCircle2 size={14} className="opacity-80 shrink-0 mt-0.5" />
+                            <CheckCircle2 size={14} className="copied-indicator" />
                           )}
                         </div>
                       </div>
                       {!isSameNext && (
                         <div className="message-meta">
                           <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          {msg.decrypted && <Shield size={10} className="text-green" />}
+                          {msg.decrypted && <Shield size={10} className="meta-secure-icon" />}
                           {isMine && (
-                            msg.delivered ? <CheckCheck size={12} className="text-accent" /> : <Check size={12} className="text-text3" />
+                            msg.delivered ? <CheckCheck size={12} className="meta-delivered-icon" /> : <Check size={12} className="meta-pending-icon" />
                           )}
                         </div>
                       )}
@@ -442,15 +442,15 @@ const Chat = () => {
             </form>
             <div className="chat-subtext">
               <Lock size={10} />
-              <span>End-to-end encrypted · Enter to send</span>
+              <span>End-to-end encrypted - Enter to send</span>
             </div>
           </>
         ) : (
           <div className="placeholder-panel">
             <div className="placeholder-hero">
-              <Shield size={48} className="text-accent2" />
+              <Shield size={48} />
               <div className="placeholder-badge">
-                <Lock size={18} className="text-white" />
+                <Lock size={18} />
               </div>
             </div>
             <h2 className="placeholder-title">WHISPERBOX</h2>
