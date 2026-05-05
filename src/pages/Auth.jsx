@@ -45,33 +45,33 @@ const Auth = () => {
             <ShieldCheck size={28} className="text-accent" />
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-text3 font-semibold">WhisperBox</p>
-              <h2 className="mt-3 text-3xl font-semibold leading-tight">Messagerie sécurisée de bout en bout</h2>
+              <h2 className="mt-3 text-3xl font-semibold leading-tight">End-to-end secure messaging</h2>
             </div>
           </div>
           <p className="auth-sidepanel-copy mt-6 text-text2 leading-7">
-            Une application simple, professionnelle et moderne pour envoyer des messages privés sans compromettre la sécurité. Clés générées localement, chiffrement AES-GCM et échange RSA-OAEP.
+            A simple, professional, and modern application for sending private messages without compromising security. Locally generated keys, AES-GCM encryption, and RSA-OAEP exchange.
           </p>
 
           <div className="auth-sidepanel-features">
             <div className="auth-feature">
               <span><Lock size={20} /></span>
               <div>
-                <p className="font-semibold">Clés gérées localement</p>
-                <p className="text-sm text-text3">Votre clé privée ne quitte jamais votre appareil.</p>
+                <p className="font-semibold">Locally managed keys</p>
+                <p className="text-sm text-text3">Your private key never leaves your device.</p>
               </div>
             </div>
             <div className="auth-feature">
               <span><Shield size={20} /></span>
               <div>
-                <p className="font-semibold">Chiffrement transparent</p>
-                <p className="text-sm text-text3">Les messages sont automatiquement chiffrés avant envoi.</p>
+                <p className="font-semibold">Transparent encryption</p>
+                <p className="text-sm text-text3">Messages are automatically encrypted before sending.</p>
               </div>
             </div>
             <div className="auth-feature">
               <span><Zap size={20} /></span>
               <div>
-                <p className="font-semibold">Design clair</p>
-                <p className="text-sm text-text3">Interface moderne, fluide et adaptée à tous les écrans.</p>
+                <p className="font-semibold">Clear design</p>
+                <p className="text-sm text-text3">Modern, fluid interface adapted to all screens.</p>
               </div>
             </div>
           </div>
@@ -88,7 +88,7 @@ const Auth = () => {
             </div>
             <div>
               <p className="logo-title">WhisperBox</p>
-              <p className="logo-subtitle">Sécurité E2EE simple et claire</p>
+              <p className="logo-subtitle">Simple and clear E2EE security</p>
             </div>
           </div>
 
@@ -116,7 +116,7 @@ const Auth = () => {
                   exit={{ opacity: 0, height: 0 }}
                   className="form-group mb-0"
                 >
-                  <label>Nom d'affichage</label>
+                  <label>Display Name</label>
                   <div className="input-wrapper relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
                     <input
@@ -133,7 +133,7 @@ const Auth = () => {
             </AnimatePresence>
 
             <div className="form-group mb-0">
-              <label>Utilisateur</label>
+              <label>Username</label>
               <div className="input-wrapper relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
                 <input
@@ -148,7 +148,7 @@ const Auth = () => {
             </div>
 
             <div className="form-group mb-0">
-              <label>Mot de passe</label>
+              <label>Password</label>
               <div className="input-wrapper relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
                 <input
@@ -188,10 +188,10 @@ const Auth = () => {
               {loading ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
-                  <span>Traitement...</span>
+                  <span>Processing...</span>
                 </>
               ) : (
-                <span>{isLogin ? "Se connecter" : "Générer l'identité"}</span>
+                <span>{isLogin ? "Sign In" : "Generate Identity"}</span>
               )}
             </button>
           </form>
@@ -199,7 +199,7 @@ const Auth = () => {
           <div className="e2ee-notice flex gap-3 mt-8 p-4 bg-accent-dim/30 rounded-2xl border border-accent/20">
             <Shield size={18} className="text-accent shrink-0 mt-0.5" />
             <p className="text-[11px] text-text font-mono leading-relaxed opacity-90">
-              Chiffrement de bout en bout. Vos clés privées ne quittent jamais votre appareil. Le serveur ne stocke que du texte chiffré.
+              End-to-end encryption. Your private keys never leave your device. The server only stores ciphertext.
             </p>
           </div>
         </motion.div>

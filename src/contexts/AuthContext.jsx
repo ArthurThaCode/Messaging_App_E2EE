@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
             await set(`pk_${userData.id}`, decryptedPrivateKey);
           }
         } catch (err) {
-          throw new Error("Clé privée introuvable ou mot de passe incorrect pour le déchiffrement.");
+          throw new Error("Private key not found or incorrect password for decryption.");
         }
       } else {
         console.warn("User has no keys stored on server");

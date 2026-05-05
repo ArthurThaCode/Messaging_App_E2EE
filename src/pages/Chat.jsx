@@ -58,7 +58,7 @@ const Chat = () => {
             setMessages((prev) => [...prev, { ...msgData, plaintext, decrypted: true }]);
           } catch (err) {
             console.error("Failed to decrypt incoming message", err);
-            setMessages((prev) => [...prev, { ...msgData, plaintext: "[Chiffrement Verrouillé]", decrypted: false }]);
+            setMessages((prev) => [...prev, { ...msgData, plaintext: "[Encryption Locked]", decrypted: false }]);
           }
         };
         handleDecryption();
@@ -101,7 +101,7 @@ const Chat = () => {
             return { ...msg, plaintext, decrypted: true };
           } catch (err) {
             console.error("Decryption failed", err);
-            return { ...msg, plaintext: "[Chiffrement Verrouillé]", decrypted: false };
+            return { ...msg, plaintext: "[Encryption Locked]", decrypted: false };
           }
         })
       );
@@ -163,7 +163,7 @@ const Chat = () => {
       fetchConversations();
     } catch (err) {
       console.error("Failed to send message", err);
-      alert("Erreur lors de l'envoi du message. Veuillez réessayer.");
+      alert("Error sending message. Please try again.");
     } finally {
       setSending(false);
     }
@@ -175,7 +175,7 @@ const Chat = () => {
         <div className="sidebar-header">
           <div>
             <p className="text-[10px] uppercase tracking-[0.35em] text-text3 font-semibold mb-2">Conversations</p>
-            <h2 className="text-xl font-semibold">Contacts sécurisés</h2>
+            <h2 className="text-xl font-semibold">Secure Contacts</h2>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ const Chat = () => {
           <Search className="search-icon" size={18} />
           <input
             type="text"
-            placeholder="Rechercher un utilisateur..."
+            placeholder="Search for a user..."
             value={searchQuery}
             onChange={handleSearch}
           />
@@ -192,7 +192,7 @@ const Chat = () => {
         <div className="sidebar-list">
           {searchQuery.length > 2 ? (
             <>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-accent font-semibold mb-3">Résultats</p>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-accent font-semibold mb-3">Results</p>
               {searchResults.map((u) => (
                 <button
                   key={u.id}
@@ -209,14 +209,14 @@ const Chat = () => {
                   </div>
                 </button>
               ))}
-              {searchResults.length === 0 && <p className="text-center text-xs text-text3 mt-4">Aucun utilisateur trouvé</p>}
+              {searchResults.length === 0 && <p className="text-center text-xs text-text3 mt-4">No user found</p>}
             </>
           ) : (
             <>
               {conversations.length === 0 ? (
                 <div className="empty-conversations">
                   <MessageSquare size={36} className="text-text3 mb-4" />
-                  <p className="text-sm text-text2">Commencez une nouvelle conversation sécurisée.</p>
+                  <p className="text-sm text-text2">Start a new secure conversation.</p>
                 </div>
               ) : (
                 conversations.map((c) => (
@@ -257,7 +257,7 @@ const Chat = () => {
               <div className="chat-meta">
                 <div className="status-chip">
                   <span className="status-dot"></span>
-                  <span>Sécurisé</span>
+                  <span>Secure</span>
                 </div>
                 <div className="meta-pill">
                   <Shield size={14} />
@@ -294,7 +294,7 @@ const Chat = () => {
             <form onSubmit={handleSendMessage} className="chat-footer glass">
               <textarea
                 rows="1"
-                placeholder="Écrire un message chiffré..."
+                placeholder="Type an encrypted message..."
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 className="msg-input"
@@ -315,7 +315,7 @@ const Chat = () => {
             </form>
             <div className="chat-subtext">
               <Lock size={12} />
-              <span>Chiffré avant l'envoi · Entrée pour envoyer</span>
+              <span>Encrypted before sending · Enter to send</span>
             </div>
           </>
         ) : (
@@ -328,12 +328,12 @@ const Chat = () => {
             </div>
             <h2 className="placeholder-title">WHISPERBOX</h2>
             <p className="placeholder-copy">
-              Sélectionnez une conversation pour démarrer un échange sécurisé de bout en bout.
+              Select a conversation to start an end-to-end secure exchange.
             </p>
             <div className="placeholder-grid">
               <div>
                 <p className="pill-title">RSA-2048</p>
-                <p className="pill-copy">Identité</p>
+                <p className="pill-copy">Identity</p>
               </div>
               <div>
                 <p className="pill-title">AES-GCM</p>
