@@ -40,44 +40,44 @@ const Auth = () => {
   return (
     <div className="auth-screen">
       <div className="auth-layout">
-        <aside className="auth-sidepanel glass rounded-[32px] p-8">
+        <aside className="auth-sidepanel">
           <div className="auth-sidepanel-head">
-            <ShieldCheck size={28} className="text-accent" />
+            <ShieldCheck size={24} className="text-accent" />
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-text3 font-semibold">WhisperBox</p>
-              <h2 className="mt-3 text-3xl font-semibold leading-tight">End-to-end secure messaging</h2>
+              <p className="text-xs uppercase tracking-[0.2em] text-text3 font-semibold mb-1">WhisperBox</p>
+              <h2>End-to-end encrypted messaging</h2>
             </div>
           </div>
-          <p className="auth-sidepanel-copy mt-6 text-text2 leading-7">
-            A simple, professional, and modern application for sending private messages without compromising security. Locally generated keys, AES-GCM encryption, and RSA-OAEP exchange.
+          <p className="auth-sidepanel-copy">
+            Send private messages with complete security. Your keys are generated locally, messages use AES-GCM encryption, and the server only stores encrypted data.
           </p>
 
           <div className="auth-sidepanel-features">
             <div className="auth-feature">
-              <span><Lock size={20} /></span>
+              <span><Lock size={18} /></span>
               <div>
-                <p className="font-semibold">Locally managed keys</p>
+                <p>Local key management</p>
                 <p className="text-sm text-text3">Your private key never leaves your device.</p>
               </div>
             </div>
             <div className="auth-feature">
-              <span><Shield size={20} /></span>
+              <span><Shield size={18} /></span>
               <div>
-                <p className="font-semibold">Transparent encryption</p>
-                <p className="text-sm text-text3">Messages are automatically encrypted before sending.</p>
+                <p>Automatic encryption</p>
+                <p className="text-sm text-text3">Messages encrypted before sending.</p>
               </div>
             </div>
             <div className="auth-feature">
-              <span><Zap size={20} /></span>
+              <span><Zap size={18} /></span>
               <div>
-                <p className="font-semibold">Clear design</p>
-                <p className="text-sm text-text3">Modern, fluid interface adapted to all screens.</p>
+                <p>Modern interface</p>
+                <p className="text-sm text-text3">Clean design that works on all screens.</p>
               </div>
             </div>
           </div>
         </aside>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="auth-box"
@@ -88,19 +88,19 @@ const Auth = () => {
             </div>
             <div>
               <p className="logo-title">WhisperBox</p>
-              <p className="logo-subtitle">Simple and clear E2EE security</p>
+              <p className="logo-subtitle">End-to-end encrypted</p>
             </div>
           </div>
 
           <div className="auth-tabs">
-            <div 
-              className={`auth-tab ${isLogin ? 'active' : ''}`} 
+            <div
+              className={`auth-tab ${isLogin ? 'active' : ''}`}
               onClick={() => { setIsLogin(true); setError(""); }}
             >
               Sign In
             </div>
-            <div 
-              className={`auth-tab ${!isLogin ? 'active' : ''}`} 
+            <div
+              className={`auth-tab ${!isLogin ? 'active' : ''}`}
               onClick={() => { setIsLogin(false); setError(""); }}
             >
               Register
@@ -162,7 +162,8 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-text3 hover:text-accent transition-colors rounded-lg"
+                  className="absolute right-3 top-0 h-full px-2 text-text3 hover:text-accent transition-colors flex items-center"
+                  style={{ cursor: 'pointer' }}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -170,20 +171,20 @@ const Auth = () => {
             </div>
 
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-3 bg-red-dim border border-red/20 rounded-xl flex items-center gap-2 mt-2"
+                className="p-3 bg-red-dim border border-red/20 rounded-xl flex items-center gap-2"
               >
                 <AlertCircle size={14} className="text-red shrink-0" />
                 <p className="text-red text-[11px] font-mono font-medium">{error}</p>
               </motion.div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
-              className="btn-primary mt-4 flex items-center justify-center gap-2"
+              className="btn-primary flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -191,16 +192,14 @@ const Auth = () => {
                   <span>Processing...</span>
                 </>
               ) : (
-                <span>{isLogin ? "Sign In" : "Generate Identity"}</span>
+                <span>{isLogin ? "Sign In" : "Create Account"}</span>
               )}
             </button>
           </form>
 
-          <div className="e2ee-notice flex gap-3 mt-8 p-4 bg-accent-dim/30 rounded-2xl border border-accent/20">
-            <Shield size={18} className="text-accent shrink-0 mt-0.5" />
-            <p className="text-[11px] text-text font-mono leading-relaxed opacity-90">
-              End-to-end encryption. Your private keys never leave your device. The server only stores ciphertext.
-            </p>
+          <div className="e2ee-notice">
+            <Shield size={16} className="text-accent shrink-0" />
+            <p>Your private keys never leave your device. The server only stores encrypted data.</p>
           </div>
         </motion.div>
       </div>

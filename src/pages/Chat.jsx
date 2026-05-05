@@ -130,6 +130,15 @@ const Chat = () => {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (selectedUser) {
+      document.body.classList.add('conversation-open');
+    } else {
+      document.body.classList.remove('conversation-open');
+    }
+    return () => document.body.classList.remove('conversation-open');
+  }, [selectedUser]);
+
   // WebSocket listeners for real-time messages
   useEffect(() => {
     const handleNewMessage = (msgData) => {
@@ -234,19 +243,17 @@ const Chat = () => {
 
   return (
     <div className="chat-shell">
-      <aside className={`sidebar ${selectedUser ? 'mobile-hidden' : ''}`}>
+      <aside className="sidebar">
         <div className="sidebar-header">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.35em] text-text3 font-semibold mb-2">Conversations</p>
-            <h2 className="text-xl font-semibold">Secure Contacts</h2>
-          </div>
+          <p>Conversations</p>
+          <h2>Messages</h2>
         </div>
 
         <div className="sidebar-search">
-          <Search className="search-icon" size={18} />
+          <Search className="search-icon" size={16} />
           <input
             type="text"
-            placeholder="Search for a user..."
+            placeholder="Search users..."
             value={searchQuery}
             onChange={handleSearch}
           />
@@ -255,7 +262,7 @@ const Chat = () => {
         <div className="sidebar-list">
           {searchQuery.length > 2 ? (
             <>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-accent font-semibold mb-3">Results</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-accent font-semibold mb-2">Search Results</p>
               {searchResults.map((u) => (
                 <button
                   key={u.id}
@@ -267,7 +274,7 @@ const Chat = () => {
                     <UserIcon size={18} className="text-accent2" />
                   </div>
                   <div className="conv-meta">
-                    <p className="font-semibold text-white truncate">{u.display_name}</p>
+                    <p>{u.display_name}</p>
                     <p className="text-xs text-text3">@{u.username}</p>
                   </div>
                 </button>
@@ -278,8 +285,8 @@ const Chat = () => {
             <>
               {conversations.length === 0 ? (
                 <div className="empty-conversations">
-                  <MessageSquare size={36} className="text-text3 mb-4" />
-                  <p className="text-sm text-text2">Start a new secure conversation.</p>
+                  <MessageSquare size={32} className="text-text3" />
+                  <p>Start a new secure conversation</p>
                 </div>
               ) : (
                 conversations.map((c) => (
@@ -290,12 +297,12 @@ const Chat = () => {
                     className={`conv-item ${selectedUser?.id === c.id ? 'active' : ''}`}
                   >
                     <div className="avatar relative">
-                      <UserIcon size={20} />
+                      <UserIcon size={18} />
                       {onlineUsers.has(c.id || c.user_id) && <div className="online-indicator"></div>}
                     </div>
                     <div className="conv-meta">
-                      <p className="font-semibold text-white truncate">{c.display_name}</p>
-                      <p className="text-[10px] uppercase tracking-[0.3em] text-green font-black">Encrypted</p>
+                      <p>{c.display_name}</p>
+                      <p className="text-green">Encrypted</p>
                     </div>
                   </button>
                 ))
@@ -305,17 +312,17 @@ const Chat = () => {
         </div>
       </aside>
 
-      <section className={`chat-area ${!selectedUser ? 'mobile-hidden' : ''}`}>
+      <section className="chat-area">
         {selectedUser ? (
           <>
-            <div className="chat-header glass">
+            <div className="chat-header">
               <div className="chat-title">
                 <button onClick={() => setSelectedUser(null)} className="back-btn">
-                  <ArrowLeft size={20} />
+                  <ArrowLeft size={18} />
                 </button>
                 <div>
-                  <p className="text-sm text-text3 uppercase tracking-[0.35em] mb-1">Conversation</p>
-                  <h3 className="text-xl font-semibold">{selectedUser.display_name}</h3>
+                  <p className="text-xs text-text3 uppercase tracking-[0.15em] mb-0.5">Conversation</p>
+                  <h3>{selectedUser.display_name}</h3>
                 </div>
               </div>
               <div className="chat-meta">
@@ -324,21 +331,21 @@ const Chat = () => {
                   <span>Secure</span>
                 </div>
                 <div className="meta-pill">
-                  <Shield size={14} />
-                  <span>AES-GCM + RSA-2048</span>
+                  <Shield size={12} />
+                  <span>Encrypted</span>
                 </div>
               </div>
             </div>
 
             <div ref={scrollRef} onScroll={handleScroll} className="messages-panel">
               <div className="e2ee-trust-badge">
-                <Shield size={24} />
-                <p>Messages and calls are end-to-end encrypted.<br/>No one outside of this chat can read or listen to them.</p>
+                <Shield size={18} />
+                <p>Messages are end-to-end encrypted. No one outside this chat can read them.</p>
               </div>
 
               {messages.map((msg, index) => {
                 const isMine = msg.from_user_id === user.id;
-                
+
                 const prevMsg = messages[index - 1];
                 const nextMsg = messages[index + 1];
                 const isSamePrev = prevMsg && prevMsg.from_user_id === msg.from_user_id;
@@ -361,11 +368,11 @@ const Chat = () => {
                       </div>
                     )}
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`message-row ${isMine ? 'sent' : 'received'} ${isSameNext ? 'mb-1' : 'mb-4'}`}
+                      className={`message-row ${isMine ? 'sent' : 'received'} ${isSameNext ? '' : 'mb-3'}`}
                     >
-                      <div 
+                      <div
                         className={`message-bubble ${isMine ? 'message-sent' : 'message-received'} ${bubbleClass}`}
                         style={{ cursor: msg.decrypted ? 'pointer' : 'default' }}
                         onClick={() => {
@@ -373,15 +380,15 @@ const Chat = () => {
                         }}
                         title={msg.decrypted ? "Click to copy" : ""}
                       >
-                        <div className="message-bubble-content flex items-center justify-between gap-2">
+                        <div className="message-bubble-content flex items-start justify-between gap-2">
                           <div className="message-bubble-text">
-                            {!msg.decrypted && <ShieldAlert size={14} className="text-red mb-2" />}
+                            {!msg.decrypted && <ShieldAlert size={12} className="text-red mb-1" />}
                             <p className={msg.decrypted ? '' : 'text-red font-mono text-xs italic'}>
                               {msg.plaintext}
                             </p>
                           </div>
                           {copiedMessageId === msg.id && (
-                            <CheckCircle2 size={16} className="opacity-80 shrink-0" />
+                            <CheckCircle2 size={14} className="opacity-80 shrink-0 mt-0.5" />
                           )}
                         </div>
                       </div>
@@ -390,7 +397,7 @@ const Chat = () => {
                           <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           {msg.decrypted && <Shield size={10} className="text-green" />}
                           {isMine && (
-                            msg.delivered ? <CheckCheck size={14} className="text-accent" /> : <Check size={14} className="text-text3" />
+                            msg.delivered ? <CheckCheck size={12} className="text-accent" /> : <Check size={12} className="text-text3" />
                           )}
                         </div>
                       )}
@@ -400,16 +407,16 @@ const Chat = () => {
               })}
               {showScrollButton && (
                 <button onClick={scrollToBottom} className="scroll-to-bottom-btn">
-                  <ArrowDown size={20} />
+                  <ArrowDown size={18} />
                 </button>
               )}
             </div>
 
-            <form onSubmit={handleSendMessage} className="chat-footer glass">
+            <form onSubmit={handleSendMessage} className="chat-footer">
               <textarea
                 ref={textareaRef}
                 rows="1"
-                placeholder="Type an encrypted message..."
+                placeholder="Type a message..."
                 value={newMessage}
                 onChange={(e) => {
                   setNewMessage(e.target.value);
@@ -430,12 +437,12 @@ const Chat = () => {
                 disabled={sending || !newMessage.trim()}
                 className="send-button"
               >
-                {sending ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+                {sending ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
               </button>
             </form>
             <div className="chat-subtext">
-              <Lock size={12} />
-              <span>Encrypted before sending · Enter to send</span>
+              <Lock size={10} />
+              <span>End-to-end encrypted · Enter to send</span>
             </div>
           </>
         ) : (

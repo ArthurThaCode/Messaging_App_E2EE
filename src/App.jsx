@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Auth from "./pages/Auth";
@@ -44,103 +44,102 @@ const AppContent = () => {
 
   return (
     <Router>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <div className="app-container">
         {user && (
-          <header className="app-header glass rounded-[32px] px-6 py-4 shadow-2xl shadow-black/30">
-            <div className="brand-block">
-              <div className="brand-icon glass p-3 rounded-3xl">
-                <Shield className="text-accent" />
+          <>
+            <header className="app-header">
+              <div className="brand-block">
+                <div className="brand-icon">
+                  <Shield size={20} className="text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs text-text3 uppercase tracking-[0.2em] font-semibold mb-0.5">WhisperBox</p>
+                  <p className="text-sm text-text2">Secure messaging</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-text2 uppercase tracking-[0.35em] font-semibold mb-1">WhisperBox</p>
-                <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Secure messaging, simplified.</h1>
-              </div>
-            </div>
 
-            <div className="header-actions">
-              <div className="status-chip">
-                <span className="status-dot"></span>
-                <span>Connected</span>
+              <div className="header-actions">
+                <div className="status-chip">
+                  <span className="status-dot"></span>
+                  <span>Connected</span>
+                </div>
+                <div className="user-info">
+                  <p className="text-sm font-semibold">{user.display_name}</p>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  className="btn-ghost"
+                  title="Toggle Theme"
+                >
+                  {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                </button>
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="btn-ghost"
+                  title="Settings"
+                >
+                  <Settings size={16} />
+                </button>
+                <button
+                  onClick={logout}
+                  className="btn-ghost"
+                  title="Log Out"
+                >
+                  <LogOut size={16} />
+                </button>
               </div>
-              <div className="user-info">
-                <p className="text-sm font-semibold">{user.display_name}</p>
-                <p className="text-xs text-text3">End-to-end encrypted session</p>
-              </div>
-              <button 
-                onClick={toggleTheme}
-                className="btn-ghost rounded-3xl px-4 py-3"
-                title="Toggle Theme"
-              >
-                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-              </button>
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="btn-ghost rounded-3xl px-4 py-3"
-                title="Settings"
-              >
-                <Settings size={18} />
-              </button>
-              <button 
-                onClick={logout}
-                className="btn-ghost rounded-3xl px-4 py-3"
-                title="Log Out"
-              >
-                <LogOut size={18} />
-              </button>
-            </div>
-          </header>
+            </header>
+          </>
         )}
 
         <AnimatePresence>
           {showSettings && user && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed absolute top-0 left-0 w-full h-full z-50 flex items-center justify-center p-4"
+              className="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center p-4"
               onClick={() => setShowSettings(false)}
-              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}
             >
-              <motion.div 
+              <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 20, opacity: 0 }}
-                className="glass rounded-3xl w-full max-w-lg p-6 relative"
+                className="settings-modal w-full max-w-lg relative"
                 onClick={e => e.stopPropagation()}
-                style={{ background: 'var(--surface)' }}
               >
-                <button 
+                <button
                   onClick={() => setShowSettings(false)}
                   className="absolute top-6 right-6 text-text3 hover:text-text transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
-                
-                <div className="flex items-center gap-3 mb-6">
-                  <div style={{ width: '48px', height: '48px', backgroundColor: 'var(--accent-dim)', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
-                    <Key size={24} />
+
+                <div className="settings-header">
+                  <div className="settings-header-icon">
+                    <Key size={22} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">Security Settings</h2>
-                    <p className="text-xs text-text3 uppercase tracking-wider">End-to-End Encryption</p>
+                    <h2 className="text-lg font-semibold">Security Settings</h2>
+                    <p className="text-xs text-text3 uppercase tracking-[0.15em]">End-to-End Encryption</p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '1rem' }}>
-                    <p className="text-xs text-text2 uppercase mb-2 font-semibold" style={{ letterSpacing: '0.05em' }}>Your Identity</p>
-                    <p className="text-sm"><strong>Display Name:</strong> {user.display_name}</p>
-                    <p className="text-sm"><strong>Username:</strong> @{user.username}</p>
+                <div className="flex flex-col gap-4">
+                  <div className="settings-section">
+                    <p>Your Identity</p>
+                    <p><strong>Display Name:</strong> {user.display_name}</p>
+                    <p><strong>Username:</strong> @{user.username}</p>
                   </div>
-                  
-                  <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '1rem' }}>
-                    <p className="text-xs text-accent uppercase mb-2 font-semibold flex items-center gap-2" style={{ letterSpacing: '0.05em' }}>
-                      <Shield size={14} /> Public Key Fingerprint
+
+                  <div className="settings-section">
+                    <p className="text-accent flex items-center gap-2">
+                      <Shield size={12} /> Public Key Fingerprint
                     </p>
-                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.05)', overflowX: 'auto' }}>
-                      <p className="text-text2" style={{ fontSize: '10px', fontFamily: 'var(--mono)', wordBreak: 'break-all' }}>
-                        {user.public_key}
-                      </p>
+                    <div className="key-fingerprint">
+                      <p>{user.public_key}</p>
                     </div>
                     <p className="text-text3 mt-2" style={{ fontSize: '11px' }}>
                       This key is shared with others to encrypt messages sent to you. Your private key never leaves this device.
@@ -152,7 +151,7 @@ const AppContent = () => {
           )}
         </AnimatePresence>
 
-        <main className="app-main">
+        <main id="main-content" className="app-main">
           <Routes>
             <Route path="/auth" element={user ? <Navigate to="/" /> : <Auth />} />
             <Route 
