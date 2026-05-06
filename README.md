@@ -76,12 +76,10 @@ The private key is **never** stored in plaintext in localStorage or sent to the 
 
 ## Known Limitations
 
-- Messages are polled every 4 seconds (not true real-time push)
 - No message editing or deletion
 - No group chats — only 1-to-1 conversations
 - No file/image attachments
 - No read receipts
-- No offline message queue on the client side
 - Key rotation is not implemented
 
 ## Tech Stack
