@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-indigo-500" size={48} />
+        <Loader2 className="animate-spin text-accent" size={48} />
       </div>
     );
   }
@@ -51,10 +51,10 @@ const AppContent = () => {
             <header className="app-header">
               <div className="brand-block">
                 <div className="brand-icon">
-                  <Shield size={20} className="text-accent" />
+                  <img src="/lovebox.svg" alt="" />
                 </div>
                 <div>
-                  <p className="text-xs text-text3 uppercase tracking-[0.2em] font-semibold mb-0.5">WhisperBox</p>
+                  <p className="text-xs text-text3 uppercase tracking-[0.2em] font-semibold mb-0.5">LoveBOX</p>
                   <p className="text-sm text-text2">Secure messaging</p>
                 </div>
               </div>

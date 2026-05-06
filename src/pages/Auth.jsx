@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, User, AtSign, ShieldCheck, Loader2, Eye, EyeOff, AlertCircle, Shield, Zap } from "lucide-react";
+import { Lock, User, AtSign, Loader2, Eye, EyeOff, AlertCircle, Shield, HeartHandshake, KeyRound, MessagesSquare } from "lucide-react";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -41,39 +41,32 @@ const Auth = () => {
     <div className="auth-screen">
       <div className="auth-layout">
         <aside className="auth-sidepanel">
-          <div className="auth-sidepanel-head">
-            <ShieldCheck size={24} />
+          <div className="auth-brand-mark">
+            <img src="/lovebox.svg" alt="LoveBOX" />
             <div>
-              <p className="auth-eyebrow">WhisperBox</p>
-              <h2>End-to-end encrypted messaging</h2>
+              <p className="auth-eyebrow">LoveBOX</p>
+              <h1>Private words, warm signal.</h1>
             </div>
           </div>
-          <p className="auth-sidepanel-copy">
-            Send private messages with complete security. Your keys are generated locally, messages use AES-GCM encryption, and the server only stores encrypted data.
-          </p>
 
-          <div className="auth-sidepanel-features">
-            <div className="auth-feature">
-              <span><Lock size={18} /></span>
-              <div>
-                <p>Local key management</p>
-                <p>Your private key never leaves your device.</p>
-              </div>
+          <div className="auth-signal-stage" aria-hidden="true">
+            <div className="signal-card signal-card-main">
+              <MessagesSquare size={24} />
+              <span>sealed</span>
             </div>
-            <div className="auth-feature">
-              <span><Shield size={18} /></span>
-              <div>
-                <p>Automatic encryption</p>
-                <p>Messages encrypted before sending.</p>
-              </div>
+            <div className="signal-card signal-card-top">
+              <KeyRound size={18} />
+              <span>local</span>
             </div>
-            <div className="auth-feature">
-              <span><Zap size={18} /></span>
-              <div>
-                <p>Modern interface</p>
-                <p>Clean design that works on all screens.</p>
-              </div>
+            <div className="signal-card signal-card-bottom">
+              <Shield size={18} />
+              <span>e2ee</span>
             </div>
+          </div>
+
+          <div className="auth-sidepanel-copy">
+            <p>A private messaging service for conversations that deserve to be kept private.</p>
+            <p>The keys remain local. The messages remain encrypted.</p>
           </div>
         </aside>
 
@@ -84,11 +77,11 @@ const Auth = () => {
         >
           <div className="logo">
             <div className="logo-icon">
-              <ShieldCheck size={20} />
+              <img src="/lovebox.svg" alt="" />
             </div>
             <div>
-              <p className="logo-title">WhisperBox</p>
-              <p className="logo-subtitle">End-to-end encrypted</p>
+              <p className="logo-title">LoveBOX</p>
+              <p className="logo-subtitle">{isLogin ? "Welcome back" : "Create your private room"}</p>
             </div>
           </div>
 
@@ -98,7 +91,7 @@ const Auth = () => {
               className={`auth-tab ${isLogin ? 'active' : ''}`}
               onClick={() => { setIsLogin(true); setError(""); }}
             >
-              Sign In
+              Sign in
             </button>
             <button
               type="button"
@@ -118,13 +111,13 @@ const Auth = () => {
                   exit={{ opacity: 0, height: 0 }}
                   className="form-group mb-0"
                 >
-                  <label>Display Name</label>
+                  <label>Display name</label>
                   <div className="input-wrapper relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
                     <input
                       type="text"
                       required
-                      placeholder="John Doe"
+                      placeholder="Alex Morgan"
                       className="pl-10"
                       autoComplete="name"
                       value={formData.displayName}
@@ -142,7 +135,7 @@ const Auth = () => {
                 <input
                   type="text"
                   required
-                  placeholder="your_username"
+                  placeholder="lovebox_id"
                   className="pl-10"
                   autoComplete="username"
                   value={formData.username}
@@ -158,7 +151,7 @@ const Auth = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="Password"
+                  placeholder="Your private password"
                   className="pl-10 pr-10"
                   autoComplete={isLogin ? "current-password" : "new-password"}
                   value={formData.password}
@@ -197,14 +190,14 @@ const Auth = () => {
                   <span>Processing...</span>
                 </>
               ) : (
-                <span>{isLogin ? "Sign In" : "Create Account"}</span>
+                  <span>{isLogin ? "Open LoveBOX" : "Create LoveBOX"}</span>
               )}
             </button>
           </form>
 
           <div className="e2ee-notice">
-            <Shield size={16} />
-            <p>Your private keys never leave your device. The server only stores encrypted data.</p>
+            <HeartHandshake size={16} />
+            <p>Local keys. Encrypted messages. Quiet by design.</p>
           </div>
         </motion.div>
       </div>
