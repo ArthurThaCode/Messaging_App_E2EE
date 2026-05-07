@@ -376,7 +376,7 @@ textarea {
 /* AUTH BOX */
 .auth-box {
   width: 100%;
-  max-width: 440px;
+  max-width: 500px;
   justify-self: end;
   padding: clamp(1.5rem, 4vw, 2.5rem);
   border-radius: 28px;
@@ -402,7 +402,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
 }
 
 .logo-icon {
@@ -435,27 +435,54 @@ textarea {
 }
 
 /* AUTH TABS */
+.auth-form-shell {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+  position: relative;
+}
+
+.auth-form-shell::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border: 1px solid rgba(255, 245, 247, 0.06);
+  border-radius: 24px;
+  transform: rotate(-1.5deg);
+  pointer-events: none;
+}
+
 .auth-tabs {
-  display: flex;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  align-self: stretch;
   background: rgba(255, 245, 247, 0.06);
   border: 1px solid rgba(255, 245, 247, 0.08);
-  border-radius: 18px;
-  padding: 4px;
-  margin-bottom: var(--space-8);
+  border-radius: 20px;
+  padding: 6px;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .auth-tab {
-  flex: 1;
-  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 112px;
+  padding: 0.8rem 0.65rem;
   text-align: center;
   cursor: pointer;
-  border-radius: 14px;
+  border-radius: 16px;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text3);
   transition: all var(--transition-base);
   border: none;
   background: transparent;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
 }
 
 .auth-tab.active {
@@ -466,6 +493,16 @@ textarea {
 
 .auth-tab:hover:not(.active) {
   color: var(--text2);
+}
+
+.auth-form-panel {
+  padding: var(--space-5);
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 245, 247, 0.075), rgba(255, 245, 247, 0.025));
+  border: 1px solid rgba(255, 245, 247, 0.08);
+  position: relative;
+  z-index: 1;
 }
 
 /* FORM ELEMENTS */
@@ -1600,6 +1637,14 @@ textarea:focus-visible {
     order: 1;
   }
 
+  .auth-form-shell {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .auth-tab {
+    min-height: 96px;
+  }
+
   .auth-sidepanel {
     order: 2;
     min-height: 460px;
@@ -1740,6 +1785,30 @@ textarea:focus-visible {
   .auth-box {
     padding: var(--space-6);
     border-radius: var(--radius-xl);
+  }
+
+  .auth-form-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-form-shell::before {
+    transform: none;
+  }
+
+  .auth-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+  }
+
+  .auth-tab {
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .auth-form-panel {
+    padding: var(--space-4);
   }
 
   .auth-sidepanel {
@@ -1943,6 +2012,15 @@ body.light-theme .auth-tab {
 body.light-theme .auth-tabs {
   background: rgba(194, 14, 53, 0.08);
   border-color: rgba(194, 14, 53, 0.14);
+}
+
+body.light-theme .auth-form-panel {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 240, 243, 0.7));
+  border-color: rgba(194, 14, 53, 0.12);
+}
+
+body.light-theme .auth-form-shell::before {
+  border-color: rgba(194, 14, 53, 0.12);
 }
 
 body.light-theme .auth-tab.active {

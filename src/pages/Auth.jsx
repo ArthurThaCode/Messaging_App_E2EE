@@ -85,115 +85,117 @@ const Auth = () => {
             </div>
           </div>
 
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={`auth-tab ${isLogin ? 'active' : ''}`}
-              onClick={() => { setIsLogin(true); setError(""); }}
-            >
-              Sign in
-            </button>
-            <button
-              type="button"
-              className={`auth-tab ${!isLogin ? 'active' : ''}`}
-              onClick={() => { setIsLogin(false); setError(""); }}
-            >
-              Register
-            </button>
-          </div>
+          <div className="auth-form-shell">
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={`auth-tab ${isLogin ? 'active' : ''}`}
+                onClick={() => { setIsLogin(true); setError(""); }}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                className={`auth-tab ${!isLogin ? 'active' : ''}`}
+                onClick={() => { setIsLogin(false); setError(""); }}
+              >
+                Register
+              </button>
+            </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <AnimatePresence mode="wait">
-              {!isLogin && (
+            <form onSubmit={handleSubmit} className="auth-form-panel flex flex-col gap-4">
+              <AnimatePresence mode="wait">
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="form-group mb-0"
+                  >
+                    <label>Display name</label>
+                    <div className="input-wrapper relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
+                      <input
+                        type="text"
+                        required
+                        placeholder="Alex Morgan"
+                        className="pl-10"
+                        autoComplete="name"
+                        value={formData.displayName}
+                        onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="form-group mb-0">
+                <label>Username</label>
+                <div className="input-wrapper relative">
+                  <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
+                  <input
+                    type="text"
+                    required
+                    placeholder="lovebox_id"
+                    className="pl-10"
+                    autoComplete="username"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group mb-0">
+                <label>Password</label>
+                <div className="input-wrapper relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Your private password"
+                    className="pl-10 pr-10"
+                    autoComplete={isLogin ? "current-password" : "new-password"}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="password-toggle"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="form-group mb-0"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="auth-error"
                 >
-                  <label>Display name</label>
-                  <div className="input-wrapper relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Alex Morgan"
-                      className="pl-10"
-                      autoComplete="name"
-                      value={formData.displayName}
-                      onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    />
-                  </div>
+                  <AlertCircle size={14} />
+                  <p>{error}</p>
                 </motion.div>
               )}
-            </AnimatePresence>
 
-            <div className="form-group mb-0">
-              <label>Username</label>
-              <div className="input-wrapper relative">
-                <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
-                <input
-                  type="text"
-                  required
-                  placeholder="lovebox_id"
-                  className="pl-10"
-                  autoComplete="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="form-group mb-0">
-              <label>Password</label>
-              <div className="input-wrapper relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text3 pointer-events-none" size={16} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  placeholder="Your private password"
-                  className="pl-10 pr-10"
-                  autoComplete={isLogin ? "current-password" : "new-password"}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="password-toggle"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="auth-error"
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary flex items-center justify-center gap-2"
               >
-                <AlertCircle size={14} />
-                <p>{error}</p>
-              </motion.div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                  <span>{isLogin ? "Open LoveBOX" : "Create LoveBOX"}</span>
-              )}
-            </button>
-          </form>
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                    <span>{isLogin ? "Open LoveBOX" : "Create LoveBOX"}</span>
+                )}
+              </button>
+            </form>
+          </div>
 
           <div className="e2ee-notice">
             <HeartHandshake size={16} />
