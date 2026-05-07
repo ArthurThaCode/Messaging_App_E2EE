@@ -926,6 +926,31 @@ button.btn-primary:disabled {
   box-shadow: 0 0 8px rgba(53, 211, 155, 0.4);
 }
 
+.unread-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.45);
+  line-height: 1;
+  z-index: 2;
+  border: 2px solid var(--bg-secondary);
+}
+
+body.light-theme .unread-badge {
+  border-color: #ffffff;
+}
+
 .empty-conversations {
   display: flex;
   flex-direction: column;
@@ -1666,6 +1691,16 @@ textarea:focus-visible {
 
 /* RESPONSIVE - MOBILE */
 @media (max-width: 767px) {
+  .auth-screen {
+    overflow-y: auto;
+    align-items: flex-start;
+    padding: var(--space-4);
+  }
+
+  .auth-layout {
+    padding-bottom: var(--space-8);
+  }
+
   .app-header {
     display: none;
   }

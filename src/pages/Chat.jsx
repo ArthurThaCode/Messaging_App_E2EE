@@ -17,6 +17,7 @@ const Chat = () => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [copiedMessageId, setCopiedMessageId] = useState(null);
+  const [unreadCounts, setUnreadCounts] = useState({});
   
   const scrollRef = useRef();
   const textareaRef = useRef(null);
@@ -162,6 +163,11 @@ const Chat = () => {
           }
         };
         handleDecryption();
+      } else if (msgData.from_user_id !== user.id) {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [msgData.from_user_id]: (prev[msgData.from_user_id] || 0) + 1
+        }));
       }
     };
 
@@ -267,7 +273,7 @@ const Chat = () => {
                 <button
                   key={u.id}
                   type="button"
-                  onClick={() => { setSelectedUser(u); setSearchQuery(''); setSearchResults([]); }}
+                  onClick={() => { setSelectedUser(u); setSearchQuery(''); setSearchResults([]); setUnreadCounts(prev => ({ ...prev, [u.id]: 0 })); }}
                   className="conv-item"
                 >
                   <div className="avatar">
@@ -293,16 +299,20 @@ const Chat = () => {
                   <button
                     key={c.id || c.user_id}
                     type="button"
-                    onClick={() => setSelectedUser(c)}
+                    onClick={() => { setSelectedUser(c); setUnreadCounts(prev => ({ ...prev, [c.id]: 0 })); }}
                     className={`conv-item ${selectedUser?.id === c.id ? 'active' : ''}`}
                   >
                     <div className="avatar relative">
                       <UserIcon size={18} />
                       {onlineUsers.has(c.id || c.user_id) && <div className="online-indicator"></div>}
+                      {unreadCounts[c.id] > 0 && <div className="unread-badge">{unreadCounts[c.id] > 9 ? '9+' : unreadCounts[c.id]}</div>}
                     </div>
                     <div className="conv-meta">
-                      <p>{c.display_name}</p>
-                      <p>Encrypted</p>
+                      <p className={unreadCounts[c.id] > 0 ? 'font-semibold' : ''} style={unreadCounts[c.id] > 0 ? { color: 'var(--text)' } : {}}>
+                        {c.display_name}
+                        {unreadCounts[c.id] > 0 && <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', marginLeft: 8, verticalAlign: 'middle' }}></span>}
+                      </p>
+                      <p>{unreadCounts[c.id] > 0 ? 'New message' : 'Encrypted'}</p>
                     </div>
                   </button>
                 ))
