@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { get, set, del } from "idb-keyval";
 import { authApi } from "../lib/api";
-import { generateIdentity, wrapPrivateKey, unwrapPrivateKey } from "../lib/crypto";
+import { generateIdentity, wrapPrivateKey, unwrapPrivateKey, importPrivateKey } from "../lib/crypto";
 import { wsService } from "../lib/websocket";
 
 const AuthContext = createContext();
@@ -22,12 +22,18 @@ export const AuthProvider = ({ children }) => {
           const { data } = await authApi.getProfile();
           // The backend might return { user: ... } or just the user object
           const userData = data.user || data;
-          setUser(userData);
           
           // Try to load private key from IndexedDB using stored userId
           const savedKey = await get(`pk_${userId}`);
-          if (savedKey) {
+          if (savedKey instanceof CryptoKey) {
+            setUser(userData);
             setPrivateKey(savedKey);
+          } else {
+            // No usable key on this device (or one stored by an older version): sign in again to restore it
+            await del(`pk_${userId}`);
+            localStorage.removeItem("token");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("userId");
           }
         } catch (err) {
           console.error("Auth init failed", err);
@@ -70,14 +76,14 @@ export const AuthProvider = ({ children }) => {
 
       if (wrappedKey && salt) {
         try {
-          const decryptedPrivateKey = await unwrapPrivateKey(
+          const unwrappedKey = await importPrivateKey(await unwrapPrivateKey(
             wrappedKey,
             password,
             salt
-          );
-          setPrivateKey(decryptedPrivateKey);
+          ));
+          setPrivateKey(unwrappedKey);
           if (userData.id) {
-            await set(`pk_${userData.id}`, decryptedPrivateKey);
+            await set(`pk_${userData.id}`, unwrappedKey);
           }
         } catch (decryptError) {
           throw new Error("Private key not found or incorrect password for decryption.", { cause: decryptError });
@@ -127,12 +133,13 @@ export const AuthProvider = ({ children }) => {
       }
       
       const userData = data.user || data;
+      const storedKey = await importPrivateKey(rawPrivateKey);
       if (userData.id) {
         localStorage.setItem("userId", userData.id);
-        await set(`pk_${userData.id}`, rawPrivateKey);
+        await set(`pk_${userData.id}`, storedKey);
       }
       setUser(userData);
-      setPrivateKey(rawPrivateKey);
+      setPrivateKey(storedKey);
       return userData;
     } else {
       // If no token, perform manual login
