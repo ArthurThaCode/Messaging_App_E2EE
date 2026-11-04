@@ -5,6 +5,7 @@ import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
 import { Loader2, LogOut, Shield, Sun, Moon, Settings, Key, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { wsService } from "./lib/websocket";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading, privateKey } = useAuth();
@@ -28,6 +29,18 @@ const AppContent = () => {
   const { user, logout } = useAuth();
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [showSettings, setShowSettings] = useState(false);
+  const [wsConnected, setWsConnected] = useState(Boolean(wsService.isConnected()));
+
+  useEffect(() => {
+    const handleConnected = () => setWsConnected(true);
+    const handleDisconnected = () => setWsConnected(false);
+    wsService.on("connected", handleConnected);
+    wsService.on("disconnected", handleDisconnected);
+    return () => {
+      wsService.off("connected", handleConnected);
+      wsService.off("disconnected", handleDisconnected);
+    };
+  }, []);
 
   useEffect(() => {
     if (theme === 'light') {
@@ -61,8 +74,8 @@ const AppContent = () => {
 
               <div className="header-actions">
                 <div className="status-chip">
-                  <span className="status-dot"></span>
-                  <span>Connected</span>
+                  <span className="status-dot" style={wsConnected ? undefined : { background: 'var(--text3)' }}></span>
+                  <span>{wsConnected ? "Connected" : "Disconnected"}</span>
                 </div>
                 <div className="user-info">
                   <p className="text-sm font-semibold">{user.display_name}</p>

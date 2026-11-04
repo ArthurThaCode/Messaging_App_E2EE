@@ -336,10 +336,6 @@ const Chat = () => {
                 </div>
               </div>
               <div className="chat-meta">
-                <div className="status-chip">
-                  <span className="status-dot"></span>
-                  <span>Secure</span>
-                </div>
                 <div className="meta-pill">
                   <Shield size={12} />
                   <span>Encrypted</span>
