@@ -477,8 +477,8 @@ const Chat = () => {
                 <p className="pill-copy">Messages</p>
               </div>
               <div>
-                <p className="pill-title">PFS</p>
-                <p className="pill-copy">Session</p>
+                <p className="pill-title">PBKDF2</p>
+                <p className="pill-copy">Key wrapping</p>
               </div>
             </div>
           </div>
