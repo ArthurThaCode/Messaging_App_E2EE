@@ -1,6 +1,6 @@
 import axios from "axios";
+import { API_BASE_URL } from "./config";
 
-const API_BASE_URL = "https://whisperbox.koyeb.app";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -33,7 +33,7 @@ api.interceptors.response.use(
         
         if (refreshToken) {
           const { data } = await axios.post(
-            "https://whisperbox.koyeb.app/auth/refresh",
+            `${API_BASE_URL}/auth/refresh`,
             { refresh_token: refreshToken }
           );
           

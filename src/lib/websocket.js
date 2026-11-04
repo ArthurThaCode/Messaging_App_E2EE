@@ -1,10 +1,12 @@
 /**
  * WebSocket service for real-time messaging
- * Connects to wss://whisperbox.koyeb.app/ws?token=<access_token>
+ * Connects to <API base URL>/ws?token=<access_token>
  * Handles message.send and message.receive events
  */
 
-const WS_BASE_URL = "wss://whisperbox.koyeb.app/ws";
+import { API_BASE_URL } from "./config";
+
+const WS_BASE_URL = `${API_BASE_URL.replace(/^http/, "ws")}/ws`;
 
 class WebSocketService {
   constructor() {
