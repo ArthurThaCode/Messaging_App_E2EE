@@ -142,6 +142,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     const userId = localStorage.getItem("userId");
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (refreshToken) {
+      // Revoke the session on the server; signing out locally must still work if the request fails
+      await authApi.logout(refreshToken).catch((err) => console.warn("Server logout failed", err));
+    }
     if (userId) {
       await del(`pk_${userId}`);
     }
