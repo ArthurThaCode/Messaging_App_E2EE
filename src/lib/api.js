@@ -73,7 +73,7 @@ export const authApi = {
 
 export const userApi = {
   getPublicKey: (userId) => api.get(`/users/${userId}/public-key`),
-  searchUsers: (query) => api.get(`/users/search?q=${query}`),
+  searchUsers: (query) => api.get(`/users/search?q=${encodeURIComponent(query)}`),
   getAllUsers: () => api.get("/users"),
 };
 
