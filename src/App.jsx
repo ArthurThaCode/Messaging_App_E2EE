@@ -162,7 +162,7 @@ const AppContent = () => {
                       <p>{fingerprint}</p>
                     </div>
                     <p className="text-text3 mt-2" style={{ fontSize: '11px' }}>
-                      This key is shared with others to encrypt messages sent to you. Your private key never leaves this device.
+                      Your public key is shared with others to encrypt messages sent to you. Your private key is only usable on this device; the server keeps a copy encrypted with your password so you can sign in again.
                     </p>
                   </div>
                 </div>
@@ -187,7 +187,7 @@ const AppContent = () => {
 
         <footer className="app-footer text-center mt-4">
           <p className="text-[10px] text-text3 uppercase tracking-[0.35em] font-medium">
-            E2EE Protocol v1.0 • AES-256-GCM • RSA-2048-OAEP
+            End-to-end encrypted • AES-256-GCM • RSA-2048-OAEP
           </p>
         </footer>
       </div>

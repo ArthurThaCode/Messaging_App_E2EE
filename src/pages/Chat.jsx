@@ -346,7 +346,7 @@ const Chat = () => {
             <div ref={scrollRef} onScroll={handleScroll} className="messages-panel">
               <div className="e2ee-trust-badge">
                 <Shield size={18} />
-                <p>Messages are end-to-end encrypted. No one outside this chat can read them.</p>
+                <p>Messages are encrypted on your device before they are sent.</p>
               </div>
 
               {messages.map((msg, index) => {

@@ -66,7 +66,7 @@ const Auth = () => {
 
           <div className="auth-sidepanel-copy">
             <p>A private messaging service for conversations that deserve to be kept private.</p>
-            <p>The keys remain local. The messages remain encrypted.</p>
+            <p>Messages are encrypted on your device. The server only keeps a password-encrypted copy of your private key.</p>
           </div>
         </aside>
 
@@ -199,7 +199,7 @@ const Auth = () => {
 
           <div className="e2ee-notice">
             <HeartHandshake size={16} />
-            <p>Local keys. Encrypted messages. Quiet by design.</p>
+            <p>Encrypted messages. Password-protected keys. Quiet by design.</p>
           </div>
         </motion.div>
       </div>
