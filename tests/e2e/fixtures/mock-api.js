@@ -11,11 +11,16 @@ export function createMockApi() {
   const tokens = new Map();
   const state = { failHistory: false };
 
+  const publicProfile = (user) => {
+    const profile = { ...user };
+    delete profile.password;
+    return profile;
+  };
+
   const issueTokens = (user) => {
     const access = `access-${crypto.randomUUID()}`;
     tokens.set(access, user);
-    const { password: _password, ...profile } = user;
-    return { access_token: access, refresh_token: `refresh-${crypto.randomUUID()}`, token_type: "bearer", expires_in: 900, user: profile };
+    return { access_token: access, refresh_token: `refresh-${crypto.randomUUID()}`, token_type: "bearer", expires_in: 900, user: publicProfile(user) };
   };
 
   async function attach(context) {
@@ -43,10 +48,7 @@ export function createMockApi() {
         return user ? json(200, issueTokens(user)) : json(401, { detail: "Invalid credentials" });
       }
       if (!me) return json(401, { detail: "Unauthorized" });
-      if (path === "/auth/me") {
-        const { password: _password, ...profile } = me;
-        return json(200, profile);
-      }
+      if (path === "/auth/me") return json(200, publicProfile(me));
       if (path === "/auth/logout") return json(200, { detail: "Logged out successfully" });
       if (path === "/users/search") {
         const query = url.searchParams.get("q").toLowerCase();
