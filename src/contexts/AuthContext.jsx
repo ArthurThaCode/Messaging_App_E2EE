@@ -28,6 +28,9 @@ export const AuthProvider = ({ children }) => {
           if (savedKey instanceof CryptoKey) {
             setUser(userData);
             setPrivateKey(savedKey);
+            wsService.connect(localStorage.getItem("token")).catch((wsErr) => {
+              console.warn("WebSocket connection failed, will fall back to polling", wsErr);
+            });
           } else {
             // No usable key on this device (or one stored by an older version): sign in again to restore it
             await del(`pk_${userId}`);
