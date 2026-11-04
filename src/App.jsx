@@ -6,6 +6,7 @@ import Chat from "./pages/Chat";
 import { Loader2, LogOut, Shield, Sun, Moon, Settings, Key, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { wsService } from "./lib/websocket";
+import { getPublicKeyFingerprint } from "./lib/crypto";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading, privateKey } = useAuth();
@@ -30,6 +31,12 @@ const AppContent = () => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [showSettings, setShowSettings] = useState(false);
   const [wsConnected, setWsConnected] = useState(Boolean(wsService.isConnected()));
+  const [fingerprint, setFingerprint] = useState("");
+
+  useEffect(() => {
+    if (!user?.public_key) return;
+    getPublicKeyFingerprint(user.public_key).then(setFingerprint);
+  }, [user?.public_key]);
 
   useEffect(() => {
     const handleConnected = () => setWsConnected(true);
@@ -149,10 +156,10 @@ const AppContent = () => {
 
                   <div className="settings-section">
                     <p className="text-accent flex items-center gap-2">
-                      <Shield size={12} /> Public Key Fingerprint
+                      <Shield size={12} /> Public Key Fingerprint (SHA-256)
                     </p>
                     <div className="key-fingerprint">
-                      <p>{user.public_key}</p>
+                      <p>{fingerprint}</p>
                     </div>
                     <p className="text-text3 mt-2" style={{ fontSize: '11px' }}>
                       This key is shared with others to encrypt messages sent to you. Your private key never leaves this device.
