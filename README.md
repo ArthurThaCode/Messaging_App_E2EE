@@ -77,7 +77,7 @@ The private key is **never** stored in plaintext in localStorage or sent to the 
 
 ## Known Limitations
 
-- The real-time WebSocket path follows the API guide but has only been tested against a simulated server; polling (every 4 seconds) remains the fallback
+- The real-time WebSocket path follows the API guide but has only been tested against mocks, not the real server; polling (every 4 seconds) remains the fallback
 - No message editing or deletion
 - No group chats — only 1-to-1 conversations
 - No file/image attachments
@@ -103,6 +103,18 @@ npm run dev
 
 The app needs the WhisperBox API at `https://whisperbox.koyeb.app`, an external service that is not part of this repository.
 
+## Local Demo With the Mock API
+
+```bash
+npm run dev:mock
+```
+
+This starts the app with `mock-server/` instead of the real API. **It is a mock for demos and local tests only.** It implements the REST and WebSocket contract of the API guide in Node, keeps everything in memory (data is lost on exit), stores passwords as received, and only listens on `127.0.0.1`. It is not the real WhisperBox backend, and working against it does not prove the app works against that backend.
+
+One difference from the guide: it also pushes messages sent with `POST /messages` to a recipient who is connected, instead of waiting for their next reconnect.
+
+The API URL can be overridden at build time with `VITE_API_BASE_URL`, which is how the mock is selected.
+
 ## Tests
 
 ```bash
@@ -110,7 +122,9 @@ npx playwright install chromium
 npm test
 ```
 
-The Playwright tests run the real browser cryptography against a simulated API (`tests/e2e/fixtures/mock-api.js`). They check that no plaintext reaches the network, that each message has its own key and IV, that sender and recipient can decrypt, that undecryptable messages show a locked indicator, and that the private key in IndexedDB is not extractable.
+The Playwright tests run the real browser cryptography against a simulated API (`tests/e2e/fixtures/mock-api.js`). They check that no plaintext reaches the network, that each message has its own key and IV, that sender and recipient can decrypt, that undecryptable messages show a locked indicator, and that the private key in IndexedDB is not extractable. They stay on this simulated API because they inspect recorded requests and inject corrupted messages and WebSocket frames.
+
+`npm run test:mock` tests the mock server itself: its contract with `node:test`, and a two-user exchange in the browser.
 
 ## Deployment
 
@@ -118,4 +132,4 @@ The Playwright tests run the real browser cryptography against a simulated API (
 npm run build
 ```
 
-The `dist/` folder can be deployed to Vercel (`vercel.json`), Netlify (`public/_redirects`), or any static hosting that serves `index.html` for unknown routes. No environment variables needed — the API URL is configured in `src/lib/config.js`.
+The `dist/` folder can be deployed to Vercel (`vercel.json`), Netlify (`public/_redirects`), or any static hosting that serves `index.html` for unknown routes. No environment variables needed — the default API URL is configured in `src/lib/config.js`.

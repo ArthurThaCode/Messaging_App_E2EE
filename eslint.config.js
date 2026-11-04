@@ -19,7 +19,8 @@ export default defineConfig([
     },
   },
   {
-    files: ['tests/**/*.js', 'playwright.config.js'],
+    files: ['tests/**/*.js', 'mock-server/**/*.js', 'playwright*.config.js'],
     languageOptions: { globals: globals.node },
+    rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }] },
   },
 ])
