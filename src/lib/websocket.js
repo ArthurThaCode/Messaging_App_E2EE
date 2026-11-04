@@ -112,7 +112,8 @@ class WebSocketService {
     const payload = data.payload ?? data;
 
     if (eventType === "message.receive") {
-      this.emit("message", payload);
+      // The sender, recipient and id sit next to the encrypted payload, so listeners need the whole frame
+      this.emit("message", data);
     } else if (eventType === "message.sent") {
       this.emit("message_sent", payload);
     } else if (eventType === "error") {

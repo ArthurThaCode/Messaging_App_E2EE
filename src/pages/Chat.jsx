@@ -142,6 +142,11 @@ const Chat = () => {
 
   // WebSocket listeners for real-time messages
   useEffect(() => {
+    // Polling can deliver the same message, so it is only added once
+    const addMessage = (message) => {
+      setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+    };
+
     const handleNewMessage = (msgData) => {
       if (selectedUser && (msgData.from_user_id === selectedUser.id || msgData.to_user_id === selectedUser.id)) {
         const handleDecryption = async () => {
@@ -156,10 +161,10 @@ const Chat = () => {
               },
               privateKey
             );
-            setMessages((prev) => [...prev, { ...msgData, plaintext, decrypted: true }]);
+            addMessage({ ...msgData, plaintext, decrypted: true });
           } catch (err) {
             console.error("Failed to decrypt incoming message", err);
-            setMessages((prev) => [...prev, { ...msgData, plaintext: "[Encryption Locked]", decrypted: false }]);
+            addMessage({ ...msgData, plaintext: "[Encryption Locked]", decrypted: false });
           }
         };
         handleDecryption();
