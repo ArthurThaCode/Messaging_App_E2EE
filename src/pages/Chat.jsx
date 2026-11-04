@@ -464,7 +464,7 @@ const Chat = () => {
                 <Lock size={18} />
               </div>
             </div>
-            <h2 className="placeholder-title">LoveBOX</h2>
+            <h2 className="placeholder-title">WhisperBox</h2>
             <p className="placeholder-copy">
               Select a conversation to start an end-to-end secure exchange.
             </p>

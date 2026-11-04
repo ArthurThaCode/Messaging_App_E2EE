@@ -71,10 +71,10 @@ const AppContent = () => {
             <header className="app-header">
               <div className="brand-block">
                 <div className="brand-icon">
-                  <img src="/lovebox.svg" alt="" />
+                  <img src="/whisperbox.svg" alt="" />
                 </div>
                 <div>
-                  <p className="text-xs text-text3 uppercase tracking-[0.2em] font-semibold mb-0.5">LoveBOX</p>
+                  <p className="text-xs text-text3 uppercase tracking-[0.2em] font-semibold mb-0.5">WhisperBox</p>
                   <p className="text-sm text-text2">Secure messaging</p>
                 </div>
               </div>

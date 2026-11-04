@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap');
 
 :root {
-  /* Base colors - LoveBOX dark theme */
+  /* Base colors - WhisperBox dark theme */
   --bg: #12070b;
   --bg-secondary: #1b0b12;
   --bg-tertiary: #261017;
@@ -16,7 +16,7 @@
   --border2: rgba(194, 14, 53, 0.26);
   --border-subtle: rgba(255, 255, 255, 0.06);
 
-  /* Accent colors - LoveBOX crimson */
+  /* Accent colors - WhisperBox crimson */
   --accent: #c20e35;
   --accent2: #ff6f8e;
   --accent3: #7d0925;
