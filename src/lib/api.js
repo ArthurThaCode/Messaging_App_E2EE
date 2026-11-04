@@ -29,15 +29,12 @@ api.interceptors.response.use(
       
       try {
         const refreshToken = localStorage.getItem("refreshToken");
-        console.log("Attempting token refresh with refreshToken:", refreshToken ? "exists" : "missing");
-        
         if (refreshToken) {
           const { data } = await axios.post(
             `${API_BASE_URL}/auth/refresh`,
             { refresh_token: refreshToken }
           );
           
-          console.log("Token refresh successful, new token stored");
           const newToken = data.access_token || data.token;
           localStorage.setItem("token", newToken);
           
@@ -74,7 +71,6 @@ export const authApi = {
 export const userApi = {
   getPublicKey: (userId) => api.get(`/users/${userId}/public-key`),
   searchUsers: (query) => api.get(`/users/search?q=${encodeURIComponent(query)}`),
-  getAllUsers: () => api.get("/users"),
 };
 
 export const messageApi = {
