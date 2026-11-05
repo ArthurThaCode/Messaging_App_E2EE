@@ -42,9 +42,9 @@ const Auth = () => {
       <div className="auth-layout">
         <aside className="auth-sidepanel">
           <div className="auth-brand-mark">
-            <img src="/lovebox.svg" alt="LoveBOX" />
+            <img src="/whisperbox.svg" alt="WhisperBox" />
             <div>
-              <p className="auth-eyebrow">LoveBOX</p>
+              <p className="auth-eyebrow">WhisperBox</p>
               <h1>Private words, warm signal.</h1>
             </div>
           </div>
@@ -66,7 +66,7 @@ const Auth = () => {
 
           <div className="auth-sidepanel-copy">
             <p>A private messaging service for conversations that deserve to be kept private.</p>
-            <p>The keys remain local. The messages remain encrypted.</p>
+            <p>Messages are encrypted on your device. The server only keeps a password-encrypted copy of your private key.</p>
           </div>
         </aside>
 
@@ -77,10 +77,10 @@ const Auth = () => {
         >
           <div className="logo">
             <div className="logo-icon">
-              <img src="/lovebox.svg" alt="" />
+              <img src="/whisperbox.svg" alt="" />
             </div>
             <div>
-              <p className="logo-title">LoveBOX</p>
+              <p className="logo-title">WhisperBox</p>
               <p className="logo-subtitle">{isLogin ? "Welcome back" : "Create your private room"}</p>
             </div>
           </div>
@@ -136,7 +136,7 @@ const Auth = () => {
                   <input
                     type="text"
                     required
-                    placeholder="lovebox_id"
+                    placeholder="your_username"
                     className="pl-10"
                     autoComplete="username"
                     value={formData.username}
@@ -191,7 +191,7 @@ const Auth = () => {
                     <span>Processing...</span>
                   </>
                 ) : (
-                    <span>{isLogin ? "Open LoveBOX" : "Create LoveBOX"}</span>
+                    <span>{isLogin ? "Open WhisperBox" : "Create WhisperBox"}</span>
                 )}
               </button>
             </form>
@@ -199,7 +199,7 @@ const Auth = () => {
 
           <div className="e2ee-notice">
             <HeartHandshake size={16} />
-            <p>Local keys. Encrypted messages. Quiet by design.</p>
+            <p>Encrypted messages. Password-protected keys. Quiet by design.</p>
           </div>
         </motion.div>
       </div>

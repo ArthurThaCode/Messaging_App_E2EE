@@ -41,7 +41,7 @@ Built with React + Vite, using the Web Crypto API.
 ### Login
 1. Server returns the wrapped private key and PBKDF2 salt
 2. Client re-derives the wrapping key from the password and unwraps the private key into memory
-3. The unwrapped key is stored in **IndexedDB** for the session (not in localStorage)
+3. The unwrapped key is imported as a **non-extractable `CryptoKey`** and stored in **IndexedDB** until logout (not in localStorage)
 
 ### Sending a Message
 1. A random **AES-GCM 256-bit** session key is generated for each message
@@ -61,14 +61,15 @@ Built with React + Vite, using the Web Crypto API.
 | Key | Where it lives | How it's protected |
 |-----|----------------|-------------------|
 | RSA Public Key | Server (plaintext) | Public by design |
-| RSA Private Key | IndexedDB (runtime) | Wrapped with AES-GCM derived from password via PBKDF2 |
+| RSA Private Key | IndexedDB (until logout) | Non-extractable `CryptoKey`: page scripts can use it to decrypt but cannot read its bytes |
 | Wrapped Private Key | Server (encrypted blob) | Cannot be unwrapped without the user's password |
 | AES Session Keys | Memory only (per-message) | Random, used once, then discarded |
 
-The private key is **never** stored in plaintext in localStorage or sent to the server in cleartext.
+The private key is **never** stored in plaintext in localStorage or sent to the server in cleartext. A non-extractable key limits what an XSS attack can do, but does not stop it from decrypting messages while it runs in the page.
 
 ## Security Trade-offs
 
+- **The password reaches the server**: the provided API requires the password at registration and login, and the same password protects the wrapped private key. A malicious server could therefore decrypt the wrapped key and read every message. In practice, this encryption mainly protects stored messages against a passive leak of the server's data. It does not protect against a server that actively turns malicious.
 - **No forward secrecy**: If a private key is compromised, all past messages encrypted with it can be decrypted. Implementing a Double Ratchet (like Signal) would fix this but adds significant complexity.
 - **Password-based key wrapping**: The security of the wrapped private key depends on the strength of the user's password. A weak password means the wrapped key is vulnerable to brute-force if the server is compromised.
 - **Token in localStorage**: JWT access and refresh tokens are stored in localStorage for session persistence. This is standard practice but makes them accessible to XSS attacks. HttpOnly cookies would be more secure but require backend changes.
@@ -76,6 +77,7 @@ The private key is **never** stored in plaintext in localStorage or sent to the 
 
 ## Known Limitations
 
+- The real-time WebSocket path follows the API guide but has only been tested against mocks, not the real server; polling (every 4 seconds) remains the fallback
 - No message editing or deletion
 - No group chats — only 1-to-1 conversations
 - No file/image attachments
@@ -92,10 +94,37 @@ The private key is **never** stored in plaintext in localStorage or sent to the 
 
 ## Running Locally
 
+Requires Node.js 22.
+
 ```bash
 npm install
 npm run dev
 ```
+
+The app needs the WhisperBox API at `https://whisperbox.koyeb.app`, an external service that is not part of this repository.
+
+## Local Demo With the Mock API
+
+```bash
+npm run dev:mock
+```
+
+This starts the app with `mock-server/` instead of the real API. **It is a mock for demos and local tests only.** It implements the REST and WebSocket contract of the API guide in Node, keeps everything in memory (data is lost on exit), stores passwords as received, and only listens on `127.0.0.1`. It is not the real WhisperBox backend, and working against it does not prove the app works against that backend.
+
+One difference from the guide: it also pushes messages sent with `POST /messages` to a recipient who is connected, instead of waiting for their next reconnect.
+
+The API URL can be overridden at build time with `VITE_API_BASE_URL`, which is how the mock is selected.
+
+## Tests
+
+```bash
+npx playwright install chromium
+npm test
+```
+
+The Playwright tests run the real browser cryptography against a simulated API (`tests/e2e/fixtures/mock-api.js`). They check that no plaintext reaches the network, that each message has its own key and IV, that sender and recipient can decrypt, that undecryptable messages show a locked indicator, and that the private key in IndexedDB is not extractable. They stay on this simulated API because they inspect recorded requests and inject corrupted messages and WebSocket frames.
+
+`npm run test:mock` tests the mock server itself: its contract with `node:test`, and a two-user exchange in the browser.
 
 ## Deployment
 
@@ -103,4 +132,4 @@ npm run dev
 npm run build
 ```
 
-The `dist/` folder can be deployed to Vercel, Netlify, or any static hosting. No environment variables needed — the API URL is configured in `src/lib/api.js`.
+The `dist/` folder can be deployed to Vercel (`vercel.json`), Netlify (`public/_redirects`), or any static hosting that serves `index.html` for unknown routes. No environment variables needed — the default API URL is configured in `src/lib/config.js`.

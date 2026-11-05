@@ -18,4 +18,9 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    files: ['tests/**/*.js', 'mock-server/**/*.js', 'playwright*.config.js'],
+    languageOptions: { globals: globals.node },
+    rules: { 'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }] },
+  },
 ])

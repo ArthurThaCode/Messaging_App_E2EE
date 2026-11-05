@@ -123,6 +123,29 @@ export const unwrapPrivateKey = async (wrappedKeyBase64, password, saltBase64) =
   return bufferToBase64(decryptedBuffer);
 };
 
+/**
+ * Short SHA-256 fingerprint of a public key: the first 8 bytes of the hash, in hexadecimal
+ */
+export const getPublicKeyFingerprint = async (publicKeyBase64) => {
+  const hash = await window.crypto.subtle.digest("SHA-256", base64ToBuffer(publicKeyBase64));
+  return Array.from(new Uint8Array(hash).slice(0, 8))
+    .map((byte) => byte.toString(16).padStart(2, "0").toUpperCase())
+    .join(":");
+};
+
+/**
+ * Import a PKCS8 private key as a non-extractable CryptoKey: it can decrypt, but scripts cannot read its bytes.
+ */
+export const importPrivateKey = async (privateKeyBase64) => {
+  return await window.crypto.subtle.importKey(
+    "pkcs8",
+    base64ToBuffer(privateKeyBase64),
+    RSA_ALGO,
+    false,
+    ["decrypt"]
+  );
+};
+
 export const encryptPayload = async (plaintext, recipientPublicKeyBase64, senderPublicKeyBase64) => {
   // 1. Generate random AES session key
   const aesKey = await window.crypto.subtle.generateKey(
@@ -183,19 +206,10 @@ export const encryptPayload = async (plaintext, recipientPublicKeyBase64, sender
 /**
  * Decrypt a message using recipient's private key
  */
-export const decryptPayload = async (payload, privateKeyBase64) => {
+export const decryptPayload = async (payload, privateKey) => {
   const { ciphertext, iv, encryptedKey } = payload;
 
-  // 1. Import recipient's private key
-  const privateKey = await window.crypto.subtle.importKey(
-    "pkcs8",
-    base64ToBuffer(privateKeyBase64),
-    RSA_ALGO,
-    false,
-    ["decrypt"]
-  );
-
-  // 2. Decrypt AES session key
+  // 1. Decrypt AES session key
   const aesKeyBuffer = await window.crypto.subtle.decrypt(
     { name: "RSA-OAEP" },
     privateKey,
@@ -210,7 +224,7 @@ export const decryptPayload = async (payload, privateKeyBase64) => {
     ["decrypt"]
   );
 
-  // 3. Decrypt message
+  // 2. Decrypt message
   const decryptedBuffer = await window.crypto.subtle.decrypt(
     { name: "AES-GCM", iv: base64ToBuffer(iv) },
     aesKey,

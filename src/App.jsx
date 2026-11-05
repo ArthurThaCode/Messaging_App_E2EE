@@ -5,6 +5,8 @@ import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
 import { Loader2, LogOut, Shield, Sun, Moon, Settings, Key, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { wsService } from "./lib/websocket";
+import { getPublicKeyFingerprint } from "./lib/crypto";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading, privateKey } = useAuth();
@@ -28,6 +30,24 @@ const AppContent = () => {
   const { user, logout } = useAuth();
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [showSettings, setShowSettings] = useState(false);
+  const [wsConnected, setWsConnected] = useState(Boolean(wsService.isConnected()));
+  const [fingerprint, setFingerprint] = useState("");
+
+  useEffect(() => {
+    if (!user?.public_key) return;
+    getPublicKeyFingerprint(user.public_key).then(setFingerprint);
+  }, [user?.public_key]);
+
+  useEffect(() => {
+    const handleConnected = () => setWsConnected(true);
+    const handleDisconnected = () => setWsConnected(false);
+    wsService.on("connected", handleConnected);
+    wsService.on("disconnected", handleDisconnected);
+    return () => {
+      wsService.off("connected", handleConnected);
+      wsService.off("disconnected", handleDisconnected);
+    };
+  }, []);
 
   useEffect(() => {
     if (theme === 'light') {
@@ -51,18 +71,18 @@ const AppContent = () => {
             <header className="app-header">
               <div className="brand-block">
                 <div className="brand-icon">
-                  <img src="/lovebox.svg" alt="" />
+                  <img src="/whisperbox.svg" alt="" />
                 </div>
                 <div>
-                  <p className="text-xs text-text3 uppercase tracking-[0.2em] font-semibold mb-0.5">LoveBOX</p>
+                  <p className="text-xs text-text3 uppercase tracking-[0.2em] font-semibold mb-0.5">WhisperBox</p>
                   <p className="text-sm text-text2">Secure messaging</p>
                 </div>
               </div>
 
               <div className="header-actions">
                 <div className="status-chip">
-                  <span className="status-dot"></span>
-                  <span>Connected</span>
+                  <span className="status-dot" style={wsConnected ? undefined : { background: 'var(--text3)' }}></span>
+                  <span>{wsConnected ? "Connected" : "Disconnected"}</span>
                 </div>
                 <div className="user-info">
                   <p className="text-sm font-semibold">{user.display_name}</p>
@@ -136,13 +156,13 @@ const AppContent = () => {
 
                   <div className="settings-section">
                     <p className="text-accent flex items-center gap-2">
-                      <Shield size={12} /> Public Key Fingerprint
+                      <Shield size={12} /> Public Key Fingerprint (SHA-256)
                     </p>
                     <div className="key-fingerprint">
-                      <p>{user.public_key}</p>
+                      <p>{fingerprint}</p>
                     </div>
                     <p className="text-text3 mt-2" style={{ fontSize: '11px' }}>
-                      This key is shared with others to encrypt messages sent to you. Your private key never leaves this device.
+                      Your public key is shared with others to encrypt messages sent to you. Your private key is only usable on this device; the server keeps a copy encrypted with your password so you can sign in again.
                     </p>
                   </div>
                 </div>
@@ -167,7 +187,7 @@ const AppContent = () => {
 
         <footer className="app-footer text-center mt-4">
           <p className="text-[10px] text-text3 uppercase tracking-[0.35em] font-medium">
-            E2EE Protocol v1.0 • AES-256-GCM • RSA-2048-OAEP
+            End-to-end encrypted • AES-256-GCM • RSA-2048-OAEP
           </p>
         </footer>
       </div>

@@ -142,6 +142,11 @@ const Chat = () => {
 
   // WebSocket listeners for real-time messages
   useEffect(() => {
+    // Polling can deliver the same message, so it is only added once
+    const addMessage = (message) => {
+      setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+    };
+
     const handleNewMessage = (msgData) => {
       if (selectedUser && (msgData.from_user_id === selectedUser.id || msgData.to_user_id === selectedUser.id)) {
         const handleDecryption = async () => {
@@ -156,10 +161,10 @@ const Chat = () => {
               },
               privateKey
             );
-            setMessages((prev) => [...prev, { ...msgData, plaintext, decrypted: true }]);
+            addMessage({ ...msgData, plaintext, decrypted: true });
           } catch (err) {
             console.error("Failed to decrypt incoming message", err);
-            setMessages((prev) => [...prev, { ...msgData, plaintext: "[Encryption Locked]", decrypted: false }]);
+            addMessage({ ...msgData, plaintext: "[Encryption Locked]", decrypted: false });
           }
         };
         handleDecryption();
@@ -336,10 +341,6 @@ const Chat = () => {
                 </div>
               </div>
               <div className="chat-meta">
-                <div className="status-chip">
-                  <span className="status-dot"></span>
-                  <span>Secure</span>
-                </div>
                 <div className="meta-pill">
                   <Shield size={12} />
                   <span>Encrypted</span>
@@ -350,7 +351,7 @@ const Chat = () => {
             <div ref={scrollRef} onScroll={handleScroll} className="messages-panel">
               <div className="e2ee-trust-badge">
                 <Shield size={18} />
-                <p>Messages are end-to-end encrypted. No one outside this chat can read them.</p>
+                <p>Messages are encrypted on your device before they are sent.</p>
               </div>
 
               {messages.map((msg, index) => {
@@ -463,7 +464,7 @@ const Chat = () => {
                 <Lock size={18} />
               </div>
             </div>
-            <h2 className="placeholder-title">LoveBOX</h2>
+            <h2 className="placeholder-title">WhisperBox</h2>
             <p className="placeholder-copy">
               Select a conversation to start an end-to-end secure exchange.
             </p>
@@ -477,8 +478,8 @@ const Chat = () => {
                 <p className="pill-copy">Messages</p>
               </div>
               <div>
-                <p className="pill-title">PFS</p>
-                <p className="pill-copy">Session</p>
+                <p className="pill-title">PBKDF2</p>
+                <p className="pill-copy">Key wrapping</p>
               </div>
             </div>
           </div>

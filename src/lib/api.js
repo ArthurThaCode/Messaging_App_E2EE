@@ -1,6 +1,6 @@
 import axios from "axios";
+import { API_BASE_URL } from "./config";
 
-const API_BASE_URL = "https://whisperbox.koyeb.app";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -29,15 +29,12 @@ api.interceptors.response.use(
       
       try {
         const refreshToken = localStorage.getItem("refreshToken");
-        console.log("Attempting token refresh with refreshToken:", refreshToken ? "exists" : "missing");
-        
         if (refreshToken) {
           const { data } = await axios.post(
-            "https://whisperbox.koyeb.app/auth/refresh",
+            `${API_BASE_URL}/auth/refresh`,
             { refresh_token: refreshToken }
           );
           
-          console.log("Token refresh successful, new token stored");
           const newToken = data.access_token || data.token;
           localStorage.setItem("token", newToken);
           
@@ -68,12 +65,12 @@ export const authApi = {
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
   getProfile: () => api.get("/auth/me"),
+  logout: (refreshToken) => api.post("/auth/logout", { refresh_token: refreshToken }),
 };
 
 export const userApi = {
   getPublicKey: (userId) => api.get(`/users/${userId}/public-key`),
-  searchUsers: (query) => api.get(`/users/search?q=${query}`),
-  getAllUsers: () => api.get("/users"),
+  searchUsers: (query) => api.get(`/users/search?q=${encodeURIComponent(query)}`),
 };
 
 export const messageApi = {
